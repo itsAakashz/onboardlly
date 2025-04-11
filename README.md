@@ -58,7 +58,7 @@ Onboardly is an enterprise-grade user onboarding platform that transforms how co
 
 ### Installation
 bash
-git clone https://github.com/yourusername/onboardly.git
+git clone https://github.com/itsAakashz/onboardly.git
 cd onboardly
 npm install
 cp .env.example .env
@@ -123,8 +123,8 @@ MIT License - See [LICENSE](LICENSE)
 
 ## 🆘 Support
 - 📧 Email: support@onboardly.io
-- 💬 [Discord Community](https://discord.gg/your-invite-link)
-- 🐛 [GitHub Issues](https://github.com/yourusername/onboardly/issues)
+- 💬 [Discord Community](https://discord.gg/)
+- 🐛 [GitHub Issues](https://github.com/)
 
 ---
 
@@ -138,4 +138,3 @@ A: Built-in consent management & anonymization.
 ---
 
 ✨ **Made with ❤️ by The Onboardly Team** ✨
-```
