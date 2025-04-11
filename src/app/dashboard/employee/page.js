@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { db } from "../../../../lib/firebase";
-import { doc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
+import { doc, getDoc, collection, query, where, getDocs, updateDoc } from "firebase/firestore";
 import { Bar, Pie } from "react-chartjs-2";
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
 
@@ -65,6 +65,48 @@ export default function EmployeePage() {
     
     fetchData();
   }, []);
+
+  const toggleTaskCompletion = async (taskId, currentStatus) => {
+    try {
+      // Optimistic UI update
+      const updatedTasks = tasksData.map(task => 
+        task.id === taskId 
+          ? { ...task, status: currentStatus === 'completed' ? 'in-progress' : 'completed' }
+          : task
+      );
+      setTasksData(updatedTasks);
+
+      // Update in Firestore
+      const taskRef = doc(db, "tasks", taskId);
+      await updateDoc(taskRef, {
+        status: currentStatus === 'completed' ? 'in-progress' : 'completed',
+        completedAt: currentStatus === 'completed' ? null : new Date().toISOString()
+      });
+
+      // Recalculate progress
+      const completedCount = updatedTasks.filter(t => t.status === 'completed').length;
+      const newProgress = Math.round((completedCount / updatedTasks.length) * 100);
+      
+      // Update employee progress if changed
+      if (employeeData.progress !== newProgress) {
+        const employeeRef = doc(db, "employees", employeeId);
+        await updateDoc(employeeRef, {
+          progress: newProgress
+        });
+        setEmployeeData(prev => ({ ...prev, progress: newProgress }));
+      }
+
+    } catch (error) {
+      console.error("Error updating task:", error);
+      // Revert on error
+      const originalTasks = tasksData.map(task => 
+        task.id === taskId 
+          ? { ...task, status: currentStatus }
+          : task
+      );
+      setTasksData(originalTasks);
+    }
+  };
 
   // Prepare data for charts
   const taskStatusData = {
@@ -212,22 +254,37 @@ export default function EmployeePage() {
               tasksData.map((task) => (
                 <div key={task.id} className="p-4 hover:bg-gray-50 transition-colors">
                   <div className="flex items-start justify-between">
-                    <div>
-                      <div className="font-medium flex items-center">
+                    <div className="flex items-start space-x-3">
+                      <button
+                        onClick={() => toggleTaskCompletion(task.id, task.status)}
+                        className={`mt-1 flex-shrink-0 h-5 w-5 rounded border flex items-center justify-center transition-colors ${
+                          task.status === 'completed'
+                            ? 'bg-green-500 border-green-600'
+                            : 'bg-white border-gray-300'
+                        }`}
+                        aria-label={task.status === 'completed' ? 'Mark as incomplete' : 'Mark as complete'}
+                      >
                         {task.status === 'completed' && (
-                          <span className="w-3 h-3 bg-green-500 rounded-full mr-2"></span>
+                          <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                          </svg>
                         )}
-                        {task.status === 'in-progress' && (
-                          <span className="w-3 h-3 bg-amber-400 rounded-full mr-2"></span>
-                        )}
-                        {(!task.status || task.status === 'not-started') && (
-                          <span className="w-3 h-3 bg-gray-300 rounded-full mr-2"></span>
-                        )}
-                        {task.title}
-                      </div>
-                      <div className="text-sm text-gray-600 mt-1">{task.description}</div>
-                      <div className="text-xs text-gray-500 mt-2">
-                        Due: {new Date(task.dueDate.seconds * 1000).toLocaleDateString()}
+                      </button>
+                      <div>
+                        <div className={`font-medium flex items-center ${
+                          task.status === 'completed' ? 'text-gray-500 line-through' : 'text-gray-800'
+                        }`}>
+                          {task.title}
+                        </div>
+                        <div className="text-sm text-gray-600 mt-1">{task.description}</div>
+                        <div className="text-xs text-gray-500 mt-2">
+                          Due: {new Date(task.dueDate.seconds * 1000).toLocaleDateString()}
+                          {task.status === 'completed' && task.completedAt && (
+                            <span className="ml-2 text-green-600">
+                              • Completed on {new Date(task.completedAt).toLocaleDateString()}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                     {task.videoLink && (
@@ -259,8 +316,8 @@ export default function EmployeePage() {
             {videoData.length > 0 ? (
               videoData.map((video) => (
                 <div key={video.id} className="p-4 hover:bg-gray-50 transition-colors">
-                  <h3 className="font-medium">{video.title}</h3>
-                  <p className="text-sm text-gray-600 mt-1">{video.description}</p>
+                  <h3 className="font-medium  text-gray-800 placeholder-gray-400 bg-gray-50">{video.title}</h3>
+                  <p className="text-sm text-black-900 mt-1">{video.description}</p>
                   <div className="mt-3">
                     {video.url.includes("youtube") ? (
                       <a
@@ -379,7 +436,7 @@ export default function EmployeePage() {
   );
 }
 
-// Loading Skeleton Component
+// Loading Skeleton Component (same as before)
 function LoadingSkeleton() {
   return (
     <main className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 md:p-8">
@@ -427,7 +484,7 @@ function LoadingSkeleton() {
   );
 }
 
-// Simple icon components (replace with actual icons from your library)
+// Icon components (same as before)
 function DocumentIcon({ className }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
