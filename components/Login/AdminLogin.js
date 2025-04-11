@@ -1,59 +1,45 @@
-// components/AdminLogin.js
-"use client";
-
 import { useState } from "react";
-import { auth } from "../../lib/firebase";
 import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "../../lib/firebase";
 
-export default function AdminLogin({ onSuccess }) {
+export default function AdminLogin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setError("");
-
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-
-      // Check if user is an admin (this can be handled via Firestore roles if needed)
-      onSuccess?.(user);
+      await signInWithEmailAndPassword(auth, email, password);
+      // ✅ Redirect without using Next.js router
+      window.location.href = "/dashboard/admin";
     } catch (err) {
-      setError("Invalid login credentials");
-      console.error(err.message);
+      setError("Invalid email or password");
     }
   };
 
   return (
-    <div className="max-w-sm w-full mx-auto p-6 bg-white rounded-xl shadow-md space-y-6">
-      <h2 className="text-2xl font-semibold text-center">Admin Login</h2>
-      <form onSubmit={handleLogin} className="space-y-4">
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          className="w-full p-3 border rounded-md"
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          className="w-full p-3 border rounded-md"
-        />
-        {error && <p className="text-red-500 text-sm">{error}</p>}
-        <button
-          type="submit"
-          className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition"
-        >
-          Login
-        </button>
-      </form>
-    </div>
+    <form onSubmit={handleLogin} className="space-y-4">
+      <input
+        type="email"
+        placeholder="Admin Email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        className="w-full border px-3 py-2 rounded"
+        required
+      />
+      <input
+        type="password"
+        placeholder="Password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        className="w-full border px-3 py-2 rounded"
+        required
+      />
+      {error && <p className="text-red-500 text-sm">{error}</p>}
+      <button type="submit" className="w-full bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700">
+        Login as Admin
+      </button>
+    </form>
   );
 }
