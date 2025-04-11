@@ -1,5 +1,8 @@
 # 🚀 Onboardly - Ultimate User Onboarding Platform
 
+
+[Deployed Website Link](https://onboardlly.vercel.app/)
+
 ![Onboardly Banner](https://via.placeholder.com/1200x400.png?text=Onboardly+-+Seamless+User+Onboarding)
 
 **Accelerate user adoption with beautiful, data-driven onboarding experiences**
@@ -99,14 +102,6 @@ onboardly.track('feature_used', {
 
 ---
 
-## 🗺 Roadmap
-| Quarter   | Features                      | Status       |
-|-----------|-------------------------------|--------------|
-| Q3 2024   | AI Tour Suggestions           | In Progress  |
-| Q4 2024   | Mobile SDK (iOS/Android)      | Planned      |
-| Q1 2025   | VR Onboarding                 | Researching  |
-
----
 
 ## 🤝 Contributing
 1. Fork the repo
