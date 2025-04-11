@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../../lib/firebase";
+import { db } from "../../lib/firebase";
+import { collection, query, where, getDocs } from "firebase/firestore";
 
 export default function EmployeeLogin({ onSuccess }) {
   const [email, setEmail] = useState("");
@@ -9,12 +9,28 @@ export default function EmployeeLogin({ onSuccess }) {
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    setError(""); // Reset error
+
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      if (onSuccess) onSuccess(); 
-      window.location.href = "/dashboard/employee"; 
+      // Query Firestore for employee with matching email and password
+      const q = query(
+        collection(db, "employees"),
+        where("email", "==", email),
+        where("password", "==", password)
+      );
+
+      const querySnapshot = await getDocs(q);
+
+      if (!querySnapshot.empty) {
+        // Successful login
+        if (onSuccess) onSuccess();
+        window.location.href = "/dashboard/employee";
+      } else {
+        setError("Invalid email or password.");
+      }
     } catch (err) {
-      setError("Invalid email or password");
+      console.error("Login error:", err);
+      setError("Something went wrong. Please try again.");
     }
   };
 
@@ -37,7 +53,10 @@ export default function EmployeeLogin({ onSuccess }) {
         required
       />
       {error && <p className="text-red-500 text-sm">{error}</p>}
-      <button type="submit" className="w-full bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700">
+      <button
+        type="submit"
+        className="w-full bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700"
+      >
         Login as Employee
       </button>
     </form>
