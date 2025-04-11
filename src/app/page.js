@@ -1,10 +1,14 @@
 "use client"
 import { useState } from "react";
+
 import Head from "next/head";
+import AdminLogin from "../../components/Login/AdminLogin";
+import EmployeeLogin from "../../components/Login/EmployeeLogin";
 
 export default function HomePage() {
   const [showModal, setShowModal] = useState(false);
   const [activeFeature, setActiveFeature] = useState(0);
+  const [selectedRole, setSelectedRole] = useState(null);
 
   const features = [
     {
@@ -325,52 +329,64 @@ export default function HomePage() {
           <div className="fixed z-50 inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
             <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
               <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" onClick={() => setShowModal(false)}></div>
-
               <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
               <div className="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-sm sm:w-full sm:p-6">
-                <div>
-                  <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-indigo-100">
-                    <svg className="h-6 w-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                  <div className="mt-3 text-center sm:mt-5">
-                    <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">
-                      Access Onboardly
-                    </h3>
-                    <div className="mt-2">
-                      <p className="text-sm text-gray-500">
-                        Select your role to continue to the appropriate dashboard.
-                      </p>
+                {selectedRole === null && (
+                  <>
+                    <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-indigo-100">
+                      <svg className="h-6 w-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                      </svg>
                     </div>
+                    <div className="mt-3 text-center sm:mt-5">
+                      <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                        Access Onboardly
+                      </h3>
+                      <p className="text-sm text-gray-500 mt-2">Select your role to continue to the appropriate dashboard.</p>
+                    </div>
+                    <div className="mt-5 sm:mt-6 space-y-3">
+                      <button
+                        onClick={() => setSelectedRole("admin")}
+                        className="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent shadow-sm text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 transition"
+                      >
+                        Admin Dashboard
+                      </button>
+                      <button
+                        onClick={() => setSelectedRole("employee")}
+                        className="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent shadow-sm text-base font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200 transition"
+                      >
+                        Employee Portal
+                      </button>
+                      <button
+                        type="button"
+                        className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50"
+                        onClick={() => setShowModal(false)}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </>
+                )}
+
+                {selectedRole === "admin" && (
+                  <div className="mt-4">
+                    <h3 className="text-lg font-semibold mb-4 text-center">Admin Login</h3>
+                    <AdminLogin onSuccess={() => setShowModal(false)} />
                   </div>
-                </div>
-                <div className="mt-5 sm:mt-6 space-y-3">
-                  <a
-                    href="/admin"
-                    className="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent shadow-sm text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                  >
-                    Admin Dashboard
-                  </a>
-                  <a
-                    href="/employee"
-                    className="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent shadow-sm text-base font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                  >
-                    Employee Portal
-                  </a>
-                  <button
-                    type="button"
-                    className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:col-start-1 sm:text-sm"
-                    onClick={() => setShowModal(false)}
-                  >
-                    Cancel
-                  </button>
-                </div>
+                )}
+
+                {selectedRole === "employee" && (
+                  <div className="mt-4">
+                    <h3 className="text-lg font-semibold mb-4 text-center">Employee Login</h3>
+                    <EmployeeLogin onSuccess={() => setShowModal(false)} />
+                  </div>
+                )}
               </div>
             </div>
           </div>
         )}
+
 
         {/* Footer */}
         <footer className="bg-gray-50">
