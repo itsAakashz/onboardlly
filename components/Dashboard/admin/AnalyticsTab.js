@@ -1,13 +1,82 @@
 "use client";
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Bar, Pie } from 'react-chartjs-2';
 import { Chart, registerables } from 'chart.js';
+import { db } from '../../../lib/firebase';
+import { collection, getDocs } from 'firebase/firestore';
 
 Chart.register(...registerables);
 
-const AnalyticsComponent = ({ analytics }) => {
-  // Chart data preparation
+const AnalyticsComponent = () => {
+  const [analytics, setAnalytics] = useState({
+    activeEmployees: 0,
+    completionRate: 0,
+    departmentDistribution: {},
+    progressByDepartment: {},
+    popularVideos: [],
+    commonSuggestions: []
+  });
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const employeesSnap = await getDocs(collection(db, 'employees'));
+      const tasksSnap = await getDocs(collection(db, 'tasks'));
+      const videosSnap = await getDocs(collection(db, 'videos'));
+
+      const employees = employeesSnap.docs.map(doc => doc.data());
+      const tasks = tasksSnap.docs.map(doc => doc.data());
+      const videos = videosSnap.docs.map(doc => doc.data());
+
+      // Department Distribution
+      const departmentCount = {};
+      employees.forEach(emp => {
+        const dept = emp.department || 'Unassigned';
+        departmentCount[dept] = (departmentCount[dept] || 0) + 1;
+      });
+
+      // Progress by Department
+      const progressMap = {};
+      employees.forEach(emp => {
+        const dept = emp.department || 'Unassigned';
+        const assignedTasks = tasks.filter(task => task.assignedTo === emp.id);
+        const completedTasks = assignedTasks.filter(task => task.completed);
+        const percent = assignedTasks.length
+          ? Math.round((completedTasks.length / assignedTasks.length) * 100)
+          : 0;
+        progressMap[dept] = progressMap[dept]
+          ? Math.round((progressMap[dept] + percent) / 2)
+          : percent;
+      });
+
+      // Completion Rate
+      const totalTasks = tasks.length;
+      const completed = tasks.filter(t => t.completed).length;
+      const completionRate = totalTasks ? Math.round((completed / totalTasks) * 100) : 0;
+
+      // Popular Videos (Dummy view count for example)
+      const popularVideos = videos.map(v => ({ ...v, views: Math.floor(Math.random() * 100) + 10 }));
+
+      // Common Suggestions (could come from a suggestions collection, mocked here)
+      const suggestions = [
+        "Add a FAQ page",
+        "Improve task feedback system",
+        "Include HR contact details"
+      ];
+
+      setAnalytics({
+        activeEmployees: employees.length,
+        completionRate,
+        departmentDistribution: departmentCount,
+        progressByDepartment: progressMap,
+        popularVideos,
+        commonSuggestions: suggestions
+      });
+    };
+
+    fetchData();
+  }, []);
+
   const departmentData = {
     labels: Object.keys(analytics.departmentDistribution),
     datasets: [
@@ -65,21 +134,18 @@ const AnalyticsComponent = ({ analytics }) => {
         </div>
         <div className="px-4 py-5 sm:p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Active Employees */}
             <div className="bg-indigo-50 p-4 rounded-lg">
               <h4 className="text-lg font-medium text-indigo-800">Active Employees</h4>
               <p className="text-3xl font-bold text-indigo-600 mt-2">{analytics.activeEmployees}</p>
               <p className="text-sm text-indigo-500 mt-1">Currently going through onboarding</p>
             </div>
 
-            {/* Completion Rate */}
             <div className="bg-green-50 p-4 rounded-lg">
               <h4 className="text-lg font-medium text-green-800">Average Completion Rate</h4>
               <p className="text-3xl font-bold text-green-600 mt-2">{analytics.completionRate}%</p>
               <p className="text-sm text-green-500 mt-1">Of assigned onboarding tasks</p>
             </div>
 
-            {/* Department Distribution */}
             <div className="bg-white p-4 rounded-lg border border-gray-200">
               <h4 className="text-lg font-medium text-gray-900 mb-4">Employees by Department</h4>
               <div className="h-64">
@@ -87,7 +153,6 @@ const AnalyticsComponent = ({ analytics }) => {
               </div>
             </div>
 
-            {/* Progress by Department */}
             <div className="bg-white p-4 rounded-lg border border-gray-200">
               <h4 className="text-lg font-medium text-gray-900 mb-4">Progress by Department</h4>
               <div className="h-64">
@@ -95,7 +160,6 @@ const AnalyticsComponent = ({ analytics }) => {
               </div>
             </div>
 
-            {/* Popular Videos */}
             <div className="bg-white p-4 rounded-lg border border-gray-200">
               <h4 className="text-lg font-medium text-gray-900 mb-4">Most Watched Video Tutorials</h4>
               <div className="h-64">
@@ -103,7 +167,6 @@ const AnalyticsComponent = ({ analytics }) => {
               </div>
             </div>
 
-            {/* Common Suggestions */}
             <div className="bg-white p-4 rounded-lg border border-gray-200">
               <h4 className="text-lg font-medium text-gray-900 mb-4">Common Suggestions</h4>
               <ul className="space-y-2">
