@@ -30,7 +30,7 @@ const EmployeesTab = ({
   // Handle submit
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!employee.name || !employee.email || !employee.role || !employee.startDate) {
+    if (!employee.name || !employee.email || !employee.role || !employee.startDate || !employee.password) {
       console.error("Missing required fields");
       return;
     }
@@ -49,7 +49,8 @@ const EmployeesTab = ({
         email: '',
         role: '',
         department: '',
-        startDate: new Date()
+        startDate: new Date(),
+        password: ''
       });
     } catch (err) {
       console.error('Error adding employee:', err);
@@ -75,6 +76,14 @@ const EmployeesTab = ({
             placeholder="Email Address"
             value={employee.email || ''}
             onChange={(e) => setEmployee({ ...employee, email: e.target.value })}
+            className="w-full border px-3 py-2 rounded text-gray-800 placeholder-gray-400 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            required
+          />
+          <input
+            type="password"
+            placeholder="Password"
+            value={employee.password || ''}
+            onChange={(e) => setEmployee({ ...employee, password: e.target.value })}
             className="w-full border px-3 py-2 rounded text-gray-800 placeholder-gray-400 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             required
           />
