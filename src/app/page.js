@@ -152,7 +152,7 @@ export default function HomePage() {
         </section>
 
         {/* Logo Cloud */}
-        <div className="bg-gray-50 py-12">
+        {/* <div className="bg-gray-50 py-12">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <p className="text-center text-sm font-semibold uppercase text-gray-500 tracking-wide">
               Trusted by innovative startups worldwide
@@ -175,13 +175,13 @@ export default function HomePage() {
               </div>
             </div>
           </div>
-        </div>
+        </div> */}
 
         {/* Features Section */}
         <section id="features" className="py-16 sm:py-24 lg:py-32 bg-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="lg:text-center">
-              <h2 className="text-base text-indigo-600 font-semibold tracking-wide uppercase">Features</h2>
+              <h2 className="text-base text-indigo-600 font-semibold tracking-wide uppercase text-[30px]">Features</h2>
               <p className="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">
                 A better way to onboard employees
               </p>
@@ -285,15 +285,15 @@ export default function HomePage() {
                       </p>
                       <div className="mt-6 flex items-center">
                         <div className="flex-shrink-0">
-                          <img className="h-10 w-10 rounded-full" src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=256&q=80" alt="" />
+                          <img className="h-10 w-10 rounded-full" src="/adarsh.jpg" alt="" />
                         </div>
                         <div className="ml-3">
                           <p className="text-sm font-medium text-gray-900">
-                            Sarah Johnson
+                            Adarsh shrivastav
                           </p>
-                          <p className="text-sm text-gray-500">
+                          {/* <p className="text-sm text-gray-500">
                             HR Director, TechStart Inc.
-                          </p>
+                          </p> */}
                         </div>
                       </div>
                     </div>
