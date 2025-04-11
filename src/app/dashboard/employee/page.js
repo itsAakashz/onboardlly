@@ -6,9 +6,10 @@ import { doc, getDoc, collection, query, where, getDocs } from "firebase/firesto
 export default function EmployeePage() {
   const [employeeData, setEmployeeData] = useState(null);
   const [tasksData, setTasksData] = useState([]);
+  const [videoData, setVideoData] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const employeeId = "zI4JX62CVhilEofgITfr"; // Can be dynamic based on auth
+  const employeeId = "zI4JX62CVhilEofgITfr"; 
 
   useEffect(() => {
     const fetchData = async () => {
@@ -27,18 +28,28 @@ export default function EmployeePage() {
           collection(db, "tasks"),
           where("assignedTo", "==", employeeId)
         );
-        const querySnapshot = await getDocs(tasksQuery);
-        const tasksList = querySnapshot.docs.map(doc => ({
+        const tasksSnapshot = await getDocs(tasksQuery);
+        const tasksList = tasksSnapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
         }));
         setTasksData(tasksList);
+
+        // Fetch videos from Firestore
+        const videosSnapshot = await getDocs(collection(db, "videos"));
+        const videosList = videosSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        setVideoData(videosList);
+        
       } catch (error) {
         console.error("Error fetching data:", error);
       } finally {
         setLoading(false);
       }
     };
+    
 
     fetchData();
   }, []);
@@ -46,7 +57,7 @@ export default function EmployeePage() {
   if (loading) return <p className="p-6 text-gray-500">Loading...</p>;
   if (!employeeData) return <p className="p-6 text-red-500">Employee not found.</p>;
 
-  const { name, videos = [], progress = 0 } = employeeData;
+  const { name, progress = 0 } = employeeData;
 
   return (
     <main className="min-h-screen bg-gray-50 p-6">
@@ -85,13 +96,24 @@ export default function EmployeePage() {
         <div className="bg-white rounded-2xl shadow p-6">
           <h2 className="text-xl font-semibold mb-4">Video Tutorials</h2>
           <ul className="space-y-4">
-            {videos.map((video, idx) => (
-              <li key={idx}>
+            {videoData.map((video) => (
+              <li key={video.id}>
                 <h3 className="font-medium">{video.title}</h3>
-                <video controls className="w-full rounded-lg">
-                  <source src={video.url} type="video/mp4" />
-                  Your browser does not support the video tag.
-                </video>
+                {video.url.includes("youtube") ? (
+                  <a
+                    href={video.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 underline block mt-1"
+                  >
+                    Watch on YouTube
+                  </a>
+                ) : (
+                  <video controls className="w-full rounded-lg mt-2">
+                    <source src={video.url} type="video/mp4" />
+                    Your browser does not support the video tag.
+                  </video>
+                )}
               </li>
             ))}
           </ul>
