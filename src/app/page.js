@@ -91,7 +91,6 @@ export default function HomePage() {
                 <div className="ml-10 flex items-center space-x-4">
                   <a href="#features" className="text-gray-900 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">Features</a>
                   <a href="#how-it-works" className="text-gray-900 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">How It Works</a>
-                  <a href="#pricing" className="text-gray-900 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">Pricing</a>
                 </div>
               </div>
               <div className="md:ml-4 flex items-center">
