@@ -54,7 +54,7 @@ Onboardly is an enterprise-grade user onboarding platform that transforms how co
 - Docker 20.10+
 
 ### Installation
-```bash
+bash
 git clone https://github.com/yourusername/onboardly.git
 cd onboardly
 npm install
@@ -63,15 +63,15 @@ docker-compose up -d
 npx prisma migrate deploy
 npm run dev
 
----
+
 
 ## ⚙️ Configuration
 Configure via `.env`:
-```env
+env
 DATABASE_URL="postgresql://user:password@localhost:5432/onboardly"
 REDIS_URL="redis://localhost:6379"
 NEXTAUTH_SECRET="your-secret-key"
-```
+
 
 ---
 
