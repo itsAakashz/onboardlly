@@ -1,10 +1,8 @@
 import { useState } from "react";
-import { useRouter } from "next/router";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../../lib/firebase";
 
 export default function EmployeeLogin({ onSuccess }) {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -13,8 +11,8 @@ export default function EmployeeLogin({ onSuccess }) {
     e.preventDefault();
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      if (onSuccess) onSuccess(); // Close modal
-      router.push("/employee/dashboard"); // Redirect
+      if (onSuccess) onSuccess(); 
+      window.location.href = "/dashboard/employee"; 
     } catch (err) {
       setError("Invalid email or password");
     }
