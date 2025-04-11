@@ -1,4 +1,8 @@
-export default function Home() {
+import { useState } from "react";
+
+export default function HomePage() {
+  const [showModal, setShowModal] = useState(false);
+
   return (
     <main className="min-h-screen bg-white text-gray-800">
       {/* Hero Section */}
@@ -43,8 +47,27 @@ export default function Home() {
       <section className="text-center py-16 px-4 bg-blue-600 text-white">
         <h2 className="text-3xl font-bold mb-4">Ready to streamline your onboarding?</h2>
         <p className="mb-6">Get started with Onboardly in just a few clicks.</p>
-        <a href="/admin" className="bg-white text-blue-600 font-semibold px-6 py-3 rounded-full hover:bg-gray-100 transition">Get Started</a>
+        <button
+          onClick={() => setShowModal(true)}
+          className="bg-white text-blue-600 font-semibold px-6 py-3 rounded-full hover:bg-gray-100 transition"
+        >
+          Get Started
+        </button>
       </section>
+
+      {/* Modal */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg max-w-sm w-full text-center shadow-lg">
+            <h3 className="text-xl font-bold mb-4">Login As</h3>
+            <div className="flex flex-col gap-4">
+              <a href="/admin" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Admin</a>
+              <a href="/employee" className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">Employee</a>
+              <button onClick={() => setShowModal(false)} className="mt-4 text-sm text-gray-600 hover:underline">Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Footer */}
       <footer className="bg-gray-100 text-center py-6 text-sm text-gray-600">
