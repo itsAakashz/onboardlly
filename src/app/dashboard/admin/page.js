@@ -82,6 +82,15 @@ const AdminDashboard = () => {
           />
         )}
 
+        {activeTab === "videos" && (
+          <VideosTab
+            video={video}
+            videos={videos}
+            setVideo={setVideo}
+            setVideos={setVideos}
+          />
+        )}
+
         {activeTab === "analytics" && <AnalyticsTab analytics={analytics} />}
       </main>
     </div>
