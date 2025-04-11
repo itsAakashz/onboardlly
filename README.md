@@ -1,4 +1,3 @@
-```markdown
 # 🚀 Onboardly - Ultimate User Onboarding Platform
 
 ![Onboardly Banner](https://via.placeholder.com/1200x400.png?text=Onboardly+-+Seamless+User+Onboarding)
@@ -63,7 +62,6 @@ cp .env.example .env
 docker-compose up -d
 npx prisma migrate deploy
 npm run dev
-```
 
 ---
 
