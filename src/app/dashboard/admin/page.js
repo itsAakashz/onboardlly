@@ -8,7 +8,7 @@ import EmployeesTab from "../../../../components/Dashboard/admin/EmployeesTab";
 import TasksTab from "../../../../components/Dashboard/admin/TasksTab";
 import VideosTab from "../../../../components/Dashboard/admin/VideosTab";
 import AnalyticsTab from "../../../../components/Dashboard/admin/AnalyticsTab";
-import ChatTab from "../../../../components/Dashboard/admin/ChatTab";
+import ChatTab from "../../../../components/Dashboard/admin/chatTab";
 
 
 
