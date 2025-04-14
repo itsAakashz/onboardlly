@@ -4,6 +4,8 @@ import { db } from "../../../../lib/firebase";
 import { doc, getDoc, collection, query, where, getDocs, updateDoc } from "firebase/firestore";
 import { Bar, Pie } from "react-chartjs-2";
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
+import ChatTab from "../../../../components/Dashboard/admin/chatTab";
+
 
 // Register ChartJS components
 ChartJS.register(
@@ -22,7 +24,7 @@ export default function EmployeePage() {
   const [videoData, setVideoData] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const employeeId = "zI4JX62CVhilEofgITfr"; 
+  const employeeId = "zI4JX62CVhilEofgITfr";
 
   useEffect(() => {
     const fetchData = async () => {
@@ -55,22 +57,22 @@ export default function EmployeePage() {
           ...doc.data()
         }));
         setVideoData(videosList);
-        
+
       } catch (error) {
         console.error("Error fetching data:", error);
       } finally {
         setLoading(false);
       }
     };
-    
+
     fetchData();
   }, []);
 
   const toggleTaskCompletion = async (taskId, currentStatus) => {
     try {
       // Optimistic UI update
-      const updatedTasks = tasksData.map(task => 
-        task.id === taskId 
+      const updatedTasks = tasksData.map(task =>
+        task.id === taskId
           ? { ...task, status: currentStatus === 'completed' ? 'in-progress' : 'completed' }
           : task
       );
@@ -86,7 +88,7 @@ export default function EmployeePage() {
       // Recalculate progress
       const completedCount = updatedTasks.filter(t => t.status === 'completed').length;
       const newProgress = Math.round((completedCount / updatedTasks.length) * 100);
-      
+
       // Update employee progress if changed
       if (employeeData.progress !== newProgress) {
         const employeeRef = doc(db, "employees", employeeId);
@@ -99,8 +101,8 @@ export default function EmployeePage() {
     } catch (error) {
       console.error("Error updating task:", error);
       // Revert on error
-      const originalTasks = tasksData.map(task => 
-        task.id === taskId 
+      const originalTasks = tasksData.map(task =>
+        task.id === taskId
           ? { ...task, status: currentStatus }
           : task
       );
@@ -152,6 +154,35 @@ export default function EmployeePage() {
 
   const { name, progress = 0, department, position } = employeeData;
 
+  // Add this inside the EmployeePage component, before the return statement
+const currentUser = employeeData 
+? { 
+    email: employeeData.email, 
+    isAdmin: false, 
+    ...employeeData // Include any other relevant user data
+  } 
+: null;
+
+// Then modify the ChatTab rendering section in the return statement:
+{/* Add this section after the Resources section */}
+<section className="bg-white rounded-xl shadow-sm overflow-hidden mb-8">
+<div className="p-6 border-b border-gray-100">
+  <h2 className="text-lg font-semibold text-gray-700">Support Chat</h2>
+</div>
+<div className="p-4 h-[500px]">
+  {currentUser ? (
+    <ChatTab 
+      employees={[]} 
+      currentUser={currentUser}
+    />
+  ) : (
+    <div className="text-center text-gray-500 p-4">
+      Loading chat interface...
+    </div>
+  )}
+</div>
+</section>
+
   return (
     <main className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 md:p-8">
       <header className="mb-8">
@@ -167,8 +198,8 @@ export default function EmployeePage() {
                 <span className="text-sm font-semibold text-indigo-600">{progress}%</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2.5 mt-1">
-                <div 
-                  className="bg-gradient-to-r from-indigo-500 to-purple-600 h-2.5 rounded-full" 
+                <div
+                  className="bg-gradient-to-r from-indigo-500 to-purple-600 h-2.5 rounded-full"
                   style={{ width: `${progress}%` }}
                 ></div>
               </div>
@@ -204,9 +235,9 @@ export default function EmployeePage() {
         <div className="bg-white rounded-xl shadow-sm p-6">
           <h2 className="text-lg font-semibold text-gray-700 mb-4">Task Status</h2>
           <div className="h-48">
-            <Pie 
-              data={taskStatusData} 
-              options={{ 
+            <Pie
+              data={taskStatusData}
+              options={{
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
@@ -214,7 +245,7 @@ export default function EmployeePage() {
                     position: 'bottom'
                   }
                 }
-              }} 
+              }}
             />
           </div>
         </div>
@@ -222,9 +253,9 @@ export default function EmployeePage() {
         <div className="bg-white rounded-xl shadow-sm p-6">
           <h2 className="text-lg font-semibold text-gray-700 mb-4">Video Views</h2>
           <div className="h-48">
-            <Bar 
-              data={videoViewsData} 
-              options={{ 
+            <Bar
+              data={videoViewsData}
+              options={{
                 responsive: true,
                 maintainAspectRatio: false,
                 scales: {
@@ -237,7 +268,7 @@ export default function EmployeePage() {
                     display: false
                   }
                 }
-              }} 
+              }}
             />
           </div>
         </div>
@@ -257,11 +288,10 @@ export default function EmployeePage() {
                     <div className="flex items-start space-x-3">
                       <button
                         onClick={() => toggleTaskCompletion(task.id, task.status)}
-                        className={`mt-1 flex-shrink-0 h-5 w-5 rounded border flex items-center justify-center transition-colors ${
-                          task.status === 'completed'
+                        className={`mt-1 flex-shrink-0 h-5 w-5 rounded border flex items-center justify-center transition-colors ${task.status === 'completed'
                             ? 'bg-green-500 border-green-600'
                             : 'bg-white border-gray-300'
-                        }`}
+                          }`}
                         aria-label={task.status === 'completed' ? 'Mark as incomplete' : 'Mark as complete'}
                       >
                         {task.status === 'completed' && (
@@ -271,9 +301,8 @@ export default function EmployeePage() {
                         )}
                       </button>
                       <div>
-                        <div className={`font-medium flex items-center ${
-                          task.status === 'completed' ? 'text-gray-500 line-through' : 'text-gray-800'
-                        }`}>
+                        <div className={`font-medium flex items-center ${task.status === 'completed' ? 'text-gray-500 line-through' : 'text-gray-800'
+                          }`}>
                           {task.title}
                         </div>
                         <div className="text-sm text-gray-600 mt-1">{task.description}</div>
@@ -329,8 +358,8 @@ export default function EmployeePage() {
                         Watch on YouTube
                       </a>
                     ) : (
-                      <video 
-                        controls 
+                      <video
+                        controls
                         className="w-full rounded-lg mt-2 shadow-sm border border-gray-200"
                         poster={video.thumbnail}
                       >
@@ -430,6 +459,21 @@ export default function EmployeePage() {
               </li>
             </ul>
           </div>
+        </div>
+      </section>
+
+      {/* Add this section after the Resources section */}
+      <section className="bg-white rounded-xl shadow-sm overflow-hidden mb-8">
+        <div className="p-6 border-b border-gray-100">
+          <h2 className="text-lg font-semibold text-gray-700">Support Chat</h2>
+        </div>
+        <div className="p-4 h-[500px]">
+          {currentUser && (
+            <ChatTab
+              employees={[]}
+              currentUser={currentUser}
+            />
+          )}
         </div>
       </section>
     </main>

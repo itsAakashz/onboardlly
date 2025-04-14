@@ -1,13 +1,16 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { auth } from "../../../../lib/firebase"; // Import your Firebase auth instance
+import { auth } from "../../../../lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import NavigationTabs from "../../../../components/Dashboard/admin/NavigationTabs";
 import EmployeesTab from "../../../../components/Dashboard/admin/EmployeesTab";
 import TasksTab from "../../../../components/Dashboard/admin/TasksTab";
 import VideosTab from "../../../../components/Dashboard/admin/VideosTab";
 import AnalyticsTab from "../../../../components/Dashboard/admin/AnalyticsTab";
+import ChatTab from "../../../../components/Dashboard/admin/ChatTab";
+
+
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("employees");
@@ -58,7 +61,7 @@ const AdminDashboard = () => {
         setLoading(false);
       } else {
         // No user is signed in, redirect to login
-        router.push('/login');
+        router.push('/');
       }
     });
 
@@ -82,7 +85,7 @@ const AdminDashboard = () => {
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
         <div className="text-center">
           <p className="text-lg font-medium text-gray-700">You need to be logged in to access this page</p>
-          <button 
+          <button
             onClick={() => router.push('/')}
             className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
           >
@@ -98,7 +101,7 @@ const AdminDashboard = () => {
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
           <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-          <button 
+          <button
             onClick={() => auth.signOut().then(() => router.push('/'))}
             className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
           >
@@ -139,6 +142,11 @@ const AdminDashboard = () => {
         )}
 
         {activeTab === "analytics" && <AnalyticsTab analytics={analytics} />}
+        
+        {activeTab === "chat" && (
+          <ChatTab employees={employees} />
+        )}
+
       </main>
     </div>
   );

@@ -1,7 +1,8 @@
 import React, { useEffect } from 'react';
 import DatePicker from 'react-datepicker';
 import { db } from '../../../lib/firebase';
-import { collection, addDoc, onSnapshot } from 'firebase/firestore';
+import { collection, addDoc, onSnapshot, doc, deleteDoc } from 'firebase/firestore';
+
 
 const EmployeesTab = ({
   employee,
@@ -34,16 +35,16 @@ const EmployeesTab = ({
       console.error("Missing required fields");
       return;
     }
-  
+
     try {
       const newEmployee = {
         ...employee,
         startDate: employee.startDate instanceof Date ? employee.startDate : new Date(employee.startDate)
       };
-  
+
       await addDoc(collection(db, 'employees'), newEmployee);
       console.log("Employee added!");
-  
+
       // Send email
       const response = await fetch('/api/sendEmployeeEmail', {
         method: 'POST',
@@ -54,13 +55,15 @@ const EmployeesTab = ({
           password: employee.password,
           role: employee.role,
           department: employee.department,
-          dashboardLink: 'https://onboardlly.vercel.app/dashboard/employee' 
+          dashboardLink: 'https://onboardlly.vercel.app/dashboard/employee'
         })
       });
-  
+
+
+
       const result = await response.json();
       console.log(result.message);
-  
+
       setEmployee({
         name: '',
         email: '',
@@ -73,7 +76,33 @@ const EmployeesTab = ({
       console.error('Error adding employee or sending mail:', err);
     }
   };
-  
+
+
+   // Handle delete
+   const handleDelete = async (emp) => {
+    try {
+      await deleteDoc(doc(db, 'employees', emp.id));
+      console.log(`Deleted ${emp.name}`);
+
+      // Send email notification
+      const response = await fetch('/api/sendEmployeeRemovalEmail', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: emp.name,
+          email: emp.email,
+          role: emp.role,
+          department: emp.department
+        })
+      });
+
+      const result = await response.json();
+      console.log(result.message);
+    } catch (err) {
+      console.error('Error deleting employee or sending mail:', err);
+    }
+  };
+
 
   return (
     <div className="mt-6">
@@ -150,6 +179,13 @@ const EmployeesTab = ({
                 <p className="text-sm text-gray-400">
                   Start Date: {emp.startDate?.toLocaleDateString?.() || new Date(emp.startDate).toLocaleDateString()}
                 </p>
+                <button
+                  onClick={() => handleDelete(emp)}
+                  className="mt-2 text-red-600 hover:text-red-800 text-sm"
+                >
+                  Remove Employee
+                </button>
+
               </li>
             ))}
           </ul>
