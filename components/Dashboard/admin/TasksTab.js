@@ -31,7 +31,35 @@ const TasksTab = ({
         ...task,
         dueDate: task.dueDate instanceof Date ? task.dueDate : new Date(task.dueDate)
       };
+
+      // Find employee object by ID
+      const assignedEmployee = employees.find(emp => emp.id === task.assignedTo);
+      const recipientEmail = assignedEmployee?.email;
+
+      if (!recipientEmail) {
+        console.error("❌ No email found for assigned employee.");
+        return;
+      }
+
+      // ✅ 1. Add task to Firestore
       await addDoc(collection(db, 'tasks'), newTask);
+
+
+
+      // ✅ 2. Send task assignment email (non-blocking)
+      fetch('/api/sendTaskEmail', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: recipientEmail,
+          title: task.title,
+          description: task.description,
+          dueDate: newTask.dueDate.toLocaleDateString(), // formatted date
+          taskLink: 'https://onboardlly.vercel.app/' // Update with actual task dashboard URL
+        })
+      });
+
+      // ✅ 3. Reset task state
       setTask({ title: '', description: '', assignedTo: '', dueDate: new Date() });
     } catch (err) {
       console.error("Error adding task:", err);
@@ -39,6 +67,7 @@ const TasksTab = ({
       setLoading(false);
     }
   };
+
 
   return (
     <div className="mt-6">

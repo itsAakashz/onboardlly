@@ -34,16 +34,33 @@ const EmployeesTab = ({
       console.error("Missing required fields");
       return;
     }
-
+  
     try {
       const newEmployee = {
         ...employee,
         startDate: employee.startDate instanceof Date ? employee.startDate : new Date(employee.startDate)
       };
-
+  
       await addDoc(collection(db, 'employees'), newEmployee);
       console.log("Employee added!");
-
+  
+      // Send email
+      const response = await fetch('/api/sendEmployeeEmail', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: employee.name,
+          email: employee.email,
+          password: employee.password,
+          role: employee.role,
+          department: employee.department,
+          dashboardLink: 'https://onboardlly.vercel.app/dashboard/employee' 
+        })
+      });
+  
+      const result = await response.json();
+      console.log(result.message);
+  
       setEmployee({
         name: '',
         email: '',
@@ -53,9 +70,10 @@ const EmployeesTab = ({
         password: ''
       });
     } catch (err) {
-      console.error('Error adding employee:', err);
+      console.error('Error adding employee or sending mail:', err);
     }
   };
+  
 
   return (
     <div className="mt-6">
