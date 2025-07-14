@@ -1,246 +1,157 @@
-// // components/Dashboard/admin/ChatTab.js
-// import { useState, useEffect, useRef } from "react";
-// import { db, auth } from "../../../lib/firebase";
-// import {
-//   collection,
-//   query,
-//   where,
-//   orderBy,
-//   addDoc,
-//   serverTimestamp,
-//   onSnapshot,
-// } from "firebase/firestore";
-// import { PaperAirplaneIcon } from "@heroicons/react/24/outline";
+// components/Dashboard/admin/ChatTab.js - Unified group & 1‑to‑1 chat
 
-// const ChatTab = ({ employees, currentUser }) => {
-//   const [selectedEmployee, setSelectedEmployee] = useState("");
-//   const [message, setMessage] = useState("");
-//   const [messages, setMessages] = useState([]);
-//   const [isSending, setIsSending] = useState(false);
-//   const messagesEndRef = useRef(null);
+/* -------------------------------------------------------------------------
+  ABOUT
+  ───────────────────────────────────────────────────────────────────────────
+  • All authenticated users (admins + employees) can join a single company‑wide
+    “general” chat room **or** start 1‑to‑1 DMs.
+  • Chats live in   /chats/{roomId}/messages   where roomId is:
+        – "general"  → company‑wide room (everyone sees the same thread)
+        – "dm_<uid1>_<uid2>" (sorted) → direct messages between two UIDs
+  • Messages documents:
+        { text, senderUid, senderName, createdAt: serverTimestamp() }
+---------------------------------------------------------------------------*/
 
-//   // Auto-scroll to bottom when messages update
-//   useEffect(() => {
-//     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-//   }, [messages]);
+import { useState, useEffect, useRef, Fragment } from "react";
+import { db, auth } from "../../../lib/firebase";
+import {
+  collection,
+  query,
+  where,
+  orderBy,
+  addDoc,
+  serverTimestamp,
+  onSnapshot,
+} from "firebase/firestore";
+import { onAuthStateChanged } from "firebase/auth";
+import { PaperAirplaneIcon } from "@heroicons/react/24/outline";
 
-//   // Fetch messages between admin and selected employee
-//   useEffect(() => {
-//     if (!selectedEmployee) return;
+const GENERAL_ROOM = "general"; // company‑wide chat id
 
-//     // Create a combined chat ID that's the same for both participants
-//     const chatId = [currentUser.email, selectedEmployee]
-//       .sort()
-//       .join("_");
+export default function ChatTab({ employees }) {
+  const [user, setUser] = useState(null);           // firebase auth user
+  const [roomId, setRoomId] = useState(GENERAL_ROOM); // current room (general or dm)
+  const [message, setMessage] = useState("");
+  const [messages, setMessages] = useState([]);
+  const [isSending, setIsSending] = useState(false);
+  const bottomRef = useRef(null);
 
-//     const q = query(
-//       collection(db, "chats", chatId, "messages"),
-//       orderBy("timestamp", "asc")
-//     );
+  /* ─────────────────────────── auth listener */
+  useEffect(() => onAuthStateChanged(auth, setUser), []);
 
-//     const unsubscribe = onSnapshot(q, (snapshot) => {
-//       const msgs = snapshot.docs.map((doc) => ({ 
-//         id: doc.id, 
-//         ...doc.data(),
-//         timestamp: doc.data().timestamp?.toDate() 
-//       }));
-//       setMessages(msgs);
-//     });
+  /* ─────────────────────────── subscribe to messages */
+  useEffect(() => {
+    if (!roomId) return;
+    const q = query(
+      collection(db, "chats", roomId, "messages"),
+      orderBy("createdAt", "asc")
+    );
+    const unsub = onSnapshot(q, (snap) => {
+      setMessages(
+        snap.docs.map((d) => ({ id: d.id, ...d.data(), createdAt: d.data().createdAt?.toDate() }))
+      );
+    });
+    return () => unsub();
+  }, [roomId]);
 
-//     return () => unsubscribe();
-//   }, [selectedEmployee, currentUser.email]);
+  /* ─────────────────────────── auto‑scroll */
+  useEffect(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }));
 
-//   const handleSendMessage = async (e) => {
-//     e.preventDefault();
-//     if (!selectedEmployee || !message.trim() || isSending) return;
+  /* ─────────────────────────── helpers */
+  const sendMessage = async () => {
+    if (!user || !message.trim()) return;
+    setIsSending(true);
+    await addDoc(collection(db, "chats", roomId, "messages"), {
+      text: message.trim(),
+      senderUid: user.uid,
+      senderName: user.displayName || user.email,
+      createdAt: serverTimestamp(),
+    });
+    setMessage("");
+    setIsSending(false);
+  };
 
-//     setIsSending(true);
-//     try {
-//       // Create consistent chat ID for both participants
-//       const chatId = [currentUser.email, selectedEmployee]
-//         .sort()
-//         .join("_");
+  const dmRoomId = (uid1, uid2) => {
+    return [uid1, uid2].sort().join("_").replace(/^/, "dm_");
+  };
 
-//       await addDoc(collection(db, "chats", chatId, "messages"), {
-//         text: message,
-//         sender: currentUser.email, // Track who sent the message
-//         receiver: selectedEmployee,
-//         timestamp: serverTimestamp(),
-//         isAdmin: true // Mark admin messages
-//       });
-//       setMessage("");
-//     } catch (error) {
-//       console.error("Error sending message:", error);
-//     } finally {
-//       setIsSending(false);
-//     }
-//   };
+  /* ─────────────────────────── UI */
+  if (!user) return <p className="p-4">Authenticating…</p>;
 
-//   const handleKeyPress = (e) => {
-//     if (e.key === "Enter" && !e.shiftKey) {
-//       e.preventDefault();
-//       handleSendMessage(e);
-//     }
-//   };
+  /** list of potential DM targets (exclude self) */
+  const dmTargets = employees.filter((e) => e.uid !== user.uid);
 
-//   const getEmployeeName = (email) => {
-//     const employee = employees.find(emp => emp.email === email);
-//     return employee ? employee.name : "Employee";
-//   };
-
-//   // For employee view (to chat with admin)
-//   const getAdminMessages = () => {
-//     if (!currentUser || currentUser.isAdmin) return [];
-
-//     const chatId = [currentUser.email, "admin@company.com"]
-//       .sort()
-//       .join("_");
-
-//     const q = query(
-//       collection(db, "chats", chatId, "messages"),
-//       orderBy("timestamp", "asc")
-//     );
-
-//     const [messages, setMessages] = useState([]);
-
-//     useEffect(() => {
-//       const unsubscribe = onSnapshot(q, (snapshot) => {
-//         const msgs = snapshot.docs.map((doc) => ({ 
-//           id: doc.id, 
-//           ...doc.data(),
-//           timestamp: doc.data().timestamp?.toDate() 
-//         }));
-//         setMessages(msgs);
-//       });
-
-//       return () => unsubscribe();
-//     }, []);
-
-//     return messages;
-//   };
-
-//   return (
-//     <div className="p-4 h-full flex flex-col">
-//       {currentUser.isAdmin ? (
-//         <>
-//           <h2 className="text-2xl font-bold text-gray-800 mb-6">Employee Chat</h2>
-//           <div className="mb-4">
-//             <label htmlFor="employee-select" className="block text-sm font-medium text-gray-700 mb-1">
-//               Select Employee
-//             </label>
-//             <select
-//               id="employee-select"
-//               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-//               value={selectedEmployee}
-//               onChange={(e) => setSelectedEmployee(e.target.value)}
-//             >
-//               <option value="">Choose an employee to chat with...</option>
-//               {employees.map((emp) => (
-//                 <option key={emp.id} value={emp.email}>
-//                   {emp.name} ({emp.department || 'No department'})
-//                 </option>
-//               ))}
-//             </select>
-//           </div>
-//         </>
-//       ) : (
-//         <h2 className="text-2xl font-bold text-gray-800 mb-6">Chat with Admin</h2>
-//       )}
-
-//       {(!currentUser.isAdmin || selectedEmployee) ? (
-//         <>
-//           <div className="flex-1 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
-//             <div className="p-4 border-b border-gray-200 bg-gray-50">
-//               <h3 className="font-medium text-gray-800">
-//                 {currentUser.isAdmin 
-//                   ? `Chat with ${getEmployeeName(selectedEmployee)}`
-//                   : "Chat with Admin Support"}
-//               </h3>
-//             </div>
-            
-//             <div className="flex-1 p-4 overflow-y-auto">
-//               {(currentUser.isAdmin ? messages : getAdminMessages()).length === 0 ? (
-//                 <div className="h-full flex items-center justify-center text-gray-500">
-//                   No messages yet. Start the conversation!
-//                 </div>
-//               ) : (
-//                 <div className="space-y-3">
-//                   {(currentUser.isAdmin ? messages : getAdminMessages()).map((msg) => (
-//                     <div
-//                       key={msg.id}
-//                       className={`flex ${msg.sender === currentUser.email ? "justify-end" : "justify-start"}`}
-//                     >
-//                       <div
-//                         className={`max-w-xs md:max-w-md lg:max-w-lg rounded-lg px-4 py-2 ${
-//                           msg.sender === currentUser.email
-//                             ? "bg-indigo-600 text-white"
-//                             : "bg-gray-100 text-gray-800"
-//                         }`}
-//                       >
-//                         <p className="text-sm">{msg.text}</p>
-//                         <p className="text-xs mt-1 opacity-70 text-right">
-//                           {msg.timestamp?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-//                         </p>
-//                       </div>
-//                     </div>
-//                   ))}
-//                   <div ref={messagesEndRef} />
-//                 </div>
-//               )}
-//             </div>
-
-//             <form onSubmit={handleSendMessage} className="p-4 border-t border-gray-200">
-//               <div className="flex items-center space-x-2">
-//                 <input
-//                   type="text"
-//                   className="flex-grow border border-gray-300 rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-//                   value={message}
-//                   onChange={(e) => setMessage(e.target.value)}
-//                   onKeyPress={handleKeyPress}
-//                   placeholder="Type your message..."
-//                   disabled={isSending}
-//                 />
-//                 <button
-//                   type="submit"
-//                   disabled={!message.trim() || isSending}
-//                   className={`p-2 rounded-full ${message.trim() ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-gray-200 text-gray-400 cursor-not-allowed'} transition-colors`}
-//                 >
-//                   <PaperAirplaneIcon className="h-5 w-5" />
-//                 </button>
-//               </div>
-//             </form>
-//           </div>
-//         </>
-//       ) : (
-//         <div className="flex-1 flex items-center justify-center bg-white rounded-xl shadow-sm border border-gray-200">
-//           <div className="text-center p-6">
-//             <div className="mx-auto h-12 w-12 text-gray-400 mb-4">
-//               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-//                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-//               </svg>
-//             </div>
-//             <h3 className="text-lg font-medium text-gray-900 mb-1">
-//               {currentUser.isAdmin ? "No employee selected" : "Chat unavailable"}
-//             </h3>
-//             <p className="text-gray-500">
-//               {currentUser.isAdmin 
-//                 ? "Choose an employee from the dropdown to start chatting"
-//                 : "There was an issue loading the chat. Please try again later."}
-//             </p>
-//           </div>
-//         </div>
-//       )}
-//     </div>
-//   );
-// };
-
-// export default ChatTab;
-import React from 'react'
-
-const chatTab = () => {
   return (
-    <div>chatTab</div>
-  )
-}
+    <div className="h-full flex flex-col p-4">
+      {/* TOP BAR */}
+      <div className="mb-4 flex items-center space-x-2">
+        <button
+          className={`px-3 py-1.5 rounded-lg text-sm ${roomId === GENERAL_ROOM ? "bg-indigo-600 text-white" : "bg-gray-200"}`}
+          onClick={() => setRoomId(GENERAL_ROOM)}
+        >
+          # General Chat
+        </button>
+        {dmTargets.length > 0 && (
+          <Fragment>
+            <span className="text-gray-500 text-sm">|</span>
+            <select
+              className="border rounded-lg px-2 py-1 text-sm"
+              value={roomId.startsWith("dm_") ? roomId : ""}
+              onChange={(e) => setRoomId(e.target.value)}
+            >
+              <option value="">Direct Message…</option>
+              {dmTargets.map((emp) => (
+                <option key={emp.uid} value={dmRoomId(user.uid, emp.uid)}>
+                  {emp.name || emp.email}
+                </option>
+              ))}
+            </select>
+          </Fragment>
+        )}
+      </div>
 
-export default chatTab
+      {/* MESSAGES AREA */}
+      <div className="flex-1 bg-white border rounded-xl p-4 overflow-y-auto space-y-3">
+        {messages.length === 0 ? (
+          <p className="text-center text-gray-500">No messages yet.</p>
+        ) : (
+          messages.map((m) => (
+            <div key={m.id} className={`flex ${m.senderUid === user.uid ? "justify-end" : "justify-start"}`}>
+              <div className={`px-4 py-2 rounded-lg max-w-xs md:max-w-md text-sm ${m.senderUid === user.uid ? "bg-indigo-600 text-white" : "bg-gray-100"}`}>
+                <p>{m.text}</p>
+                <p className="text-[10px] opacity-60 mt-1 text-right">
+                  {m.senderUid === user.uid ? "You" : m.senderName} • {m.createdAt?.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                </p>
+              </div>
+            </div>
+          ))
+        )}
+        <div ref={bottomRef} />
+      </div>
+
+      {/* INPUT BAR */}
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          sendMessage();
+        }}
+        className="mt-3 flex items-center space-x-2"
+      >
+        <input
+          className="flex-grow border rounded-full px-4 py-2 focus:ring-2 focus:ring-indigo-500"
+          placeholder="Type a message…"
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          disabled={isSending}
+        />
+        <button
+          type="submit"
+          disabled={!message.trim()}
+          className={`p-2 rounded-full ${message.trim() ? "bg-indigo-600 text-white" : "bg-gray-300"}`}
+        >
+          <PaperAirplaneIcon className="h-5 w-5" />
+        </button>
+      </form>
+    </div>
+  );
+}
