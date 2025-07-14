@@ -56,6 +56,16 @@ export default function EmployeePage() {
         setLoading(true);
         const allSnap = await getDocs(collectionGroup(db, "employees"));
         const allEmps = allSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+
+        // Inject admin user into employee list
+        const adminUser = {
+          uid: "ADMIN",
+          name: "Admin",
+          email: "admin@company.com",
+          isAdmin: true,
+        };
+        if (!allEmps.some((u) => u.uid === "ADMIN")) allEmps.push(adminUser);
+
         setEmployees(allEmps);
 
         const meDoc = allEmps.find((e) => e.uid === user.uid);
@@ -136,7 +146,7 @@ export default function EmployeePage() {
   if (!employeeData) return null;
 
   const { name, progress = 0, department, role } = employeeData;
-  const otherUsers = employees.filter((e) => e.uid !== auth.currentUser.uid);
+  const otherUsers = employees.filter((e) => e.uid !== auth.currentUser.uid && e.uid);
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 md:p-8 flex flex-col space-y-8">
@@ -176,8 +186,8 @@ export default function EmployeePage() {
             <button className={`px-3 py-1.5 text-sm rounded-lg ${roomId === GENERAL_ROOM ? "bg-indigo-600 text-white" : "bg-gray-200"}`} onClick={() => setRoomId(GENERAL_ROOM)}># General</button>
             <select value={roomId.startsWith("dm_") ? roomId : ""} onChange={(e) => setRoomId(e.target.value)} className="border rounded-lg text-sm px-2 py-1">
               <option value="">Direct Message…</option>
-              {otherUsers.map((u, index) => (
-                <option key={u.uid || index} value={dmId(auth.currentUser.uid, u.uid)}>{u.name || u.email}</option>
+              {otherUsers.map((u) => (
+                <option key={u.uid} value={dmId(auth.currentUser.uid, u.uid)}>{u.isAdmin ? "Admin" : u.name || u.email}</option>
               ))}
             </select>
           </div>
