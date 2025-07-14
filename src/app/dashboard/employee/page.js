@@ -48,6 +48,7 @@ export default function EmployeePage() {
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (!user) {
         setError("You must be logged in to access this page.");
+        
         setLoading(false);
         return;
       }

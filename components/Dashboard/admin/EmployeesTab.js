@@ -90,7 +90,7 @@ const EmployeesTab = ({
           password: employee.password,
           role: employee.role,
           department: employee.department,
-          dashboardLink: 'https://onboardlly.vercel.app/dashboard/employee'
+          dashboardLink: 'https://onboardlly.vercel.app/'
         })
       });
 
