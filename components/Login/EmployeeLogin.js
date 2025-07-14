@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { db } from "../../lib/firebase";
-import { collection, query, where, getDocs } from "firebase/firestore";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "../../lib/firebase";
 
 export default function EmployeeLogin({ onSuccess }) {
   const [email, setEmail] = useState("");
@@ -9,28 +9,24 @@ export default function EmployeeLogin({ onSuccess }) {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setError(""); // Reset error
+    setError("");
 
     try {
-      // Query Firestore for employee with matching email and password
-      const q = query(
-        collection(db, "employees"),
-        where("email", "==", email),
-        where("password", "==", password)
-      );
+      await signInWithEmailAndPassword(auth, email, password);
 
-      const querySnapshot = await getDocs(q);
-
-      if (!querySnapshot.empty) {
-        // Successful login
-        if (onSuccess) onSuccess();
-        window.location.href = "/dashboard/employee";
-      } else {
-        setError("Invalid email or password.");
-      }
+      // Success
+      if (onSuccess) onSuccess();
+      window.location.href = "/dashboard/employee";
     } catch (err) {
       console.error("Login error:", err);
-      setError("Something went wrong. Please try again.");
+      if (
+        err.code === "auth/user-not-found" ||
+        err.code === "auth/wrong-password"
+      ) {
+        setError("Invalid email or password.");
+      } else {
+        setError("Something went wrong. Please try again.");
+      }
     }
   };
 

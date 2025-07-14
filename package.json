@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
+    "@twilio/conversations": "^2.6.2",
     "chart.js": "^4.4.8",
     "firebase": "^11.6.0",
     "next": "15.3.0",
