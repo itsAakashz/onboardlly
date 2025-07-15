@@ -11,6 +11,8 @@ import {
   addDoc,
   onSnapshot,
   serverTimestamp,
+  updateDoc,
+  doc,
 } from "firebase/firestore";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { Bar, Pie, Line } from "react-chartjs-2";
@@ -35,7 +37,9 @@ import {
   VideoCameraIcon,
   UserGroupIcon,
   ChatBubbleLeftRightIcon,
-  ArrowUpCircleIcon
+  ArrowUpCircleIcon,
+  Bars3Icon,
+  XMarkIcon
 } from "@heroicons/react/24/outline";
 
 ChartJS.register(
@@ -64,6 +68,7 @@ export default function EmployeePage() {
   const [msgs, setMsgs] = useState([]);
   const [sending, setSending] = useState(false);
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const bottomRef = useRef(null);
 
   useEffect(() => {
@@ -142,6 +147,21 @@ export default function EmployeePage() {
   const handleLogout = async () => {
     await signOut(auth);
     window.location.href = "/login";
+  };
+
+  const handleTaskStatusChange = async (taskId, newStatus) => {
+    try {
+      // Update the task status in Firestore
+      await updateDoc(doc(db, "tasks", taskId), {
+        status: newStatus
+      });
+      // Update local state
+      setTasksData(tasksData.map(task => 
+        task.id === taskId ? {...task, status: newStatus} : task
+      ));
+    } catch (error) {
+      console.error("Error updating task status:", error);
+    }
   };
 
   // Data for charts
@@ -278,31 +298,93 @@ export default function EmployeePage() {
                 <span>Sign out</span>
               </button>
             </div>
+            <div className="sm:hidden flex items-center">
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none"
+              >
+                {mobileMenuOpen ? (
+                  <XMarkIcon className="block h-6 w-6" />
+                ) : (
+                  <Bars3Icon className="block h-6 w-6" />
+                )}
+              </button>
+            </div>
           </div>
         </div>
+
+        {/* Mobile menu */}
+        {mobileMenuOpen && (
+          <div className="sm:hidden">
+            <div className="pt-2 pb-3 space-y-1">
+              <button
+                onClick={() => {
+                  setActiveTab("dashboard");
+                  setMobileMenuOpen(false);
+                }}
+                className={`${activeTab === "dashboard" ? 'bg-indigo-50 border-indigo-500 text-indigo-700' : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'} block pl-3 pr-4 py-2 border-l-4 text-base font-medium`}
+              >
+                Dashboard
+              </button>
+              <button
+                onClick={() => {
+                  setActiveTab("tasks");
+                  setMobileMenuOpen(false);
+                }}
+                className={`${activeTab === "tasks" ? 'bg-indigo-50 border-indigo-500 text-indigo-700' : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'} block pl-3 pr-4 py-2 border-l-4 text-base font-medium`}
+              >
+                Tasks
+              </button>
+              <button
+                onClick={() => {
+                  setActiveTab("videos");
+                  setMobileMenuOpen(false);
+                }}
+                className={`${activeTab === "videos" ? 'bg-indigo-50 border-indigo-500 text-indigo-700' : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'} block pl-3 pr-4 py-2 border-l-4 text-base font-medium`}
+              >
+                Training
+              </button>
+              <button
+                onClick={() => {
+                  setActiveTab("chat");
+                  setMobileMenuOpen(false);
+                }}
+                className={`${activeTab === "chat" ? 'bg-indigo-50 border-indigo-500 text-indigo-700' : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'} block pl-3 pr-4 py-2 border-l-4 text-base font-medium`}
+              >
+                Team Chat
+              </button>
+              <button
+                onClick={handleLogout}
+                className="block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700"
+              >
+                Sign out
+              </button>
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
         {activeTab === "dashboard" && (
           <>
             {/* Welcome Card */}
-            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl shadow-lg overflow-hidden mb-8">
-              <div className="p-6 md:p-8 text-white">
+            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl shadow-lg overflow-hidden mb-6 sm:mb-8">
+              <div className="p-4 sm:p-6 md:p-8 text-white">
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                   <div>
-                    <h1 className="text-2xl md:text-3xl font-bold">Welcome back, {name}!</h1>
-                    <p className="mt-2 opacity-90">{role} • {department}</p>
-                    <div className="mt-4 w-full bg-white bg-opacity-20 rounded-full h-2.5">
+                    <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">Welcome back, {name}!</h1>
+                    <p className="mt-1 sm:mt-2 opacity-90 text-sm sm:text-base">{role} • {department}</p>
+                    <div className="mt-3 sm:mt-4 w-full bg-white bg-opacity-20 rounded-full h-2.5">
                       <div 
                         className="bg-white h-2.5 rounded-full" 
                         style={{ width: `${progress}%` }}
                       ></div>
                     </div>
-                    <p className="mt-2 text-sm opacity-90">Your progress: {progress}%</p>
+                    <p className="mt-1 sm:mt-2 text-xs sm:text-sm opacity-90">Your progress: {progress}%</p>
                   </div>
-                  <div className="mt-4 md:mt-0">
-                    <button className="px-4 py-2 bg-white text-indigo-600 rounded-lg font-medium hover:bg-opacity-90 transition">
+                  <div className="mt-3 sm:mt-4 md:mt-0">
+                    <button className="w-full sm:w-auto px-3 sm:px-4 py-1.5 sm:py-2 bg-white text-indigo-600 rounded-lg font-medium hover:bg-opacity-90 transition text-sm sm:text-base">
                       View Profile
                     </button>
                   </div>
@@ -311,11 +393,11 @@ export default function EmployeePage() {
             </div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div className="grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-6 sm:mb-8">
               <StatCard 
                 title="Total Tasks" 
                 value={tasksData.length} 
-                icon={<CheckCircleIcon className="h-6 w-6 text-indigo-600" />}
+                icon={<CheckCircleIcon className="h-5 sm:h-6 w-5 sm:w-6 text-indigo-600" />}
                 trend="up"
                 change="12%"
                 color="indigo"
@@ -323,7 +405,7 @@ export default function EmployeePage() {
               <StatCard 
                 title="Completed" 
                 value={tasksData.filter(t => t.status === "completed").length} 
-                icon={<CheckCircleIcon className="h-6 w-6 text-green-600" />}
+                icon={<CheckCircleIcon className="h-5 sm:h-6 w-5 sm:w-6 text-green-600" />}
                 trend="up"
                 change="8%"
                 color="green"
@@ -331,7 +413,7 @@ export default function EmployeePage() {
               <StatCard 
                 title="In Progress" 
                 value={tasksData.filter(t => t.status === "in-progress").length} 
-                icon={<ArrowPathIcon className="h-6 w-6 text-amber-600" />}
+                icon={<ArrowPathIcon className="h-5 sm:h-6 w-5 sm:w-6 text-amber-600" />}
                 trend="down"
                 change="3%"
                 color="amber"
@@ -339,7 +421,7 @@ export default function EmployeePage() {
               <StatCard 
                 title="Training Videos" 
                 value={videoData.length} 
-                icon={<VideoCameraIcon className="h-6 w-6 text-purple-600" />}
+                icon={<VideoCameraIcon className="h-5 sm:h-6 w-5 sm:w-6 text-purple-600" />}
                 trend="up"
                 change="24%"
                 color="purple"
@@ -347,7 +429,7 @@ export default function EmployeePage() {
             </div>
 
             {/* Charts Row */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <div className="grid grid-cols-1 gap-6 mb-6 sm:mb-8 lg:grid-cols-2">
               <ChartCard title="Task Status Distribution">
                 <Pie 
                   data={taskStatusData} 
@@ -360,7 +442,8 @@ export default function EmployeePage() {
                           padding: 20
                         }
                       } 
-                    } 
+                    },
+                    maintainAspectRatio: false
                   }} 
                 />
               </ChartCard>
@@ -383,40 +466,41 @@ export default function EmployeePage() {
                         beginAtZero: true,
                         max: 100
                       }
-                    }
+                    },
+                    maintainAspectRatio: false
                   }} 
                 />
               </ChartCard>
             </div>
 
             {/* Recent Activity */}
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden mb-8">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h2 className="text-lg font-semibold text-gray-900">Recent Activity</h2>
+            <div className="bg-white rounded-xl shadow-sm overflow-hidden mb-6 sm:mb-8">
+              <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200">
+                <h2 className="text-base sm:text-lg font-semibold text-gray-900">Recent Activity</h2>
               </div>
               <div className="divide-y divide-gray-200">
                 {tasksData.slice(0, 5).map((task) => (
-                  <div key={task.id} className="px-6 py-4 flex items-center">
-                    <div className={`flex-shrink-0 h-10 w-10 rounded-full flex items-center justify-center ${
+                  <div key={task.id} className="px-4 sm:px-6 py-3 sm:py-4 flex items-center">
+                    <div className={`flex-shrink-0 h-8 sm:h-10 w-8 sm:w-10 rounded-full flex items-center justify-center ${
                       task.status === "completed" ? "bg-green-100" : 
                       task.status === "in-progress" ? "bg-amber-100" : "bg-red-100"
                     }`}>
                       {task.status === "completed" ? (
-                        <CheckCircleIcon className="h-6 w-6 text-green-600" />
+                        <CheckCircleIcon className="h-5 sm:h-6 w-5 sm:w-6 text-green-600" />
                       ) : task.status === "in-progress" ? (
-                        <ArrowPathIcon className="h-6 w-6 text-amber-600" />
+                        <ArrowPathIcon className="h-5 sm:h-6 w-5 sm:w-6 text-amber-600" />
                       ) : (
-                        <ClockIcon className="h-6 w-6 text-red-600" />
+                        <ClockIcon className="h-5 sm:h-6 w-5 sm:w-6 text-red-600" />
                       )}
                     </div>
-                    <div className="ml-4 flex-1">
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium text-gray-900">{task.title}</p>
-                        <p className="text-xs text-gray-500">
+                    <div className="ml-3 sm:ml-4 flex-1 min-w-0">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                        <p className="text-sm font-medium text-gray-900 truncate">{task.title}</p>
+                        <p className="text-xs text-gray-500 mt-1 sm:mt-0">
                           Due: {new Date(task.dueDate?.seconds * 1000).toLocaleDateString()}
                         </p>
                       </div>
-                      <p className="text-sm text-gray-500">{task.description}</p>
+                      <p className="text-xs sm:text-sm text-gray-500 truncate">{task.description}</p>
                     </div>
                   </div>
                 ))}
@@ -427,13 +511,13 @@ export default function EmployeePage() {
 
         {activeTab === "tasks" && (
           <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">Your Tasks</h2>
+            <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+              <h2 className="text-base sm:text-lg font-semibold text-gray-900">Your Tasks</h2>
               <div className="flex space-x-2">
-                <button className="px-3 py-1 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700">
+                <button className="px-2 sm:px-3 py-1 bg-indigo-600 text-white text-xs sm:text-sm rounded-lg hover:bg-indigo-700">
                   Add Task
                 </button>
-                <button className="px-3 py-1 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50">
+                <button className="px-2 sm:px-3 py-1 border border-gray-300 text-gray-700 text-xs sm:text-sm rounded-lg hover:bg-gray-50">
                   Filter
                 </button>
               </div>
@@ -441,22 +525,23 @@ export default function EmployeePage() {
             <div className="divide-y divide-gray-200">
               {tasksData.length > 0 ? (
                 tasksData.map((task) => (
-                  <div key={task.id} className="px-6 py-4 flex items-start">
+                  <div key={task.id} className="px-4 sm:px-6 py-3 sm:py-4 flex items-start">
                     <div className="flex-shrink-0 pt-1">
                       <input 
-                        type="checkbox" 
-                        checked={task.status === "completed"}
-                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                      />
+  type="checkbox" 
+  checked={task.status === "completed"}
+  onChange={() => handleTaskStatusChange(task.id, task.status === "completed" ? "not-started" : "completed")}
+  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+/>
                     </div>
-                    <div className="ml-3 flex-1">
-                      <div className="flex items-center justify-between">
-                        <p className={`text-sm font-medium ${
+                    <div className="ml-3 flex-1 min-w-0">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                        <p className={`text-sm font-medium truncate ${
                           task.status === "completed" ? "text-gray-500 line-through" : "text-gray-900"
                         }`}>
                           {task.title}
                         </p>
-                        <span className={`px-2 py-1 text-xs rounded-full ${
+                        <span className={`mt-1 sm:mt-0 px-2 py-1 text-xs rounded-full ${
                           task.status === "completed" ? "bg-green-100 text-green-800" :
                           task.status === "in-progress" ? "bg-amber-100 text-amber-800" :
                           "bg-red-100 text-red-800"
@@ -465,7 +550,7 @@ export default function EmployeePage() {
                            task.status === "in-progress" ? "In Progress" : "Not Started"}
                         </span>
                       </div>
-                      <p className="text-sm text-gray-500 mt-1">{task.description}</p>
+                      <p className="text-xs sm:text-sm text-gray-500 mt-1 truncate">{task.description}</p>
                       <div className="mt-2 flex items-center text-xs text-gray-500">
                         <ClockIcon className="h-3 w-3 mr-1" />
                         <span>Due: {new Date(task.dueDate?.seconds * 1000).toLocaleDateString()}</span>
@@ -474,10 +559,10 @@ export default function EmployeePage() {
                   </div>
                 ))
               ) : (
-                <div className="px-6 py-12 text-center">
-                  <CheckCircleIcon className="mx-auto h-12 w-12 text-gray-400" />
+                <div className="px-6 py-8 sm:py-12 text-center">
+                  <CheckCircleIcon className="mx-auto h-10 sm:h-12 w-10 sm:w-12 text-gray-400" />
                   <h3 className="mt-2 text-sm font-medium text-gray-900">No tasks</h3>
-                  <p className="mt-1 text-sm text-gray-500">You currently have no assigned tasks.</p>
+                  <p className="mt-1 text-xs sm:text-sm text-gray-500">You currently have no assigned tasks.</p>
                 </div>
               )}
             </div>
@@ -485,19 +570,19 @@ export default function EmployeePage() {
         )}
 
         {activeTab === "videos" && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {videoData.length > 0 ? (
               videoData.map((video) => (
                 <div key={video.id} className="bg-white rounded-xl shadow-sm overflow-hidden">
-                  <div className="bg-gray-200 h-40 flex items-center justify-center">
-                    <VideoCameraIcon className="h-12 w-12 text-gray-400" />
+                  <div className="bg-gray-200 h-32 sm:h-40 flex items-center justify-center">
+                    <VideoCameraIcon className="h-10 sm:h-12 w-10 sm:w-12 text-gray-400" />
                   </div>
-                  <div className="p-4">
-                    <h3 className="text-lg font-medium text-gray-900">{video.title}</h3>
-                    <p className="mt-1 text-sm text-gray-500">{video.description}</p>
-                    <div className="mt-4 flex items-center justify-between">
+                  <div className="p-3 sm:p-4">
+                    <h3 className="text-sm sm:text-base font-medium text-gray-900 truncate">{video.title}</h3>
+                    <p className="mt-1 text-xs sm:text-sm text-gray-500 line-clamp-2">{video.description}</p>
+                    <div className="mt-3 sm:mt-4 flex items-center justify-between">
                       <span className="text-xs text-gray-500">{video.views || 0} views</span>
-                      <button className="px-3 py-1 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700">
+                      <button className="px-2 sm:px-3 py-1 bg-indigo-600 text-white text-xs sm:text-sm rounded-lg hover:bg-indigo-700">
                         Watch
                       </button>
                     </div>
@@ -505,129 +590,130 @@ export default function EmployeePage() {
                 </div>
               ))
             ) : (
-              <div className="col-span-3 bg-white rounded-xl shadow-sm p-12 text-center">
-                <VideoCameraIcon className="mx-auto h-12 w-12 text-gray-400" />
+              <div className="col-span-full bg-white rounded-xl shadow-sm p-6 sm:p-12 text-center">
+                <VideoCameraIcon className="mx-auto h-10 sm:h-12 w-10 sm:w-12 text-gray-400" />
                 <h3 className="mt-2 text-sm font-medium text-gray-900">No training videos</h3>
-                <p className="mt-1 text-sm text-gray-500">There are currently no training videos available.</p>
+                <p className="mt-1 text-xs sm:text-sm text-gray-500">There are currently no training videos available.</p>
               </div>
             )}
           </div>
         )}
-{activeTab === "chat" && (
-  <div className="bg-white rounded-xl shadow-sm flex flex-col h-[calc(100vh-200px)]">
-    <div className="p-4 border-b flex items-center space-x-2">
-      <button 
-        className={`px-3 py-1.5 text-sm rounded-lg flex items-center ${
-          roomId === GENERAL_ROOM ? "bg-indigo-600 text-white" : "bg-gray-200 hover:bg-gray-300"
-        }`} 
-        onClick={() => setRoomId(GENERAL_ROOM)}
-      >
-        <UserGroupIcon className="h-4 w-4 mr-2" />
-        # General
-      </button>
-      <select 
-  value={roomId.startsWith("dm_") ? roomId : ""} 
-  onChange={(e) => setRoomId(e.target.value)} 
-  className="border rounded-lg text-sm px-3 py-1.5 focus:ring-indigo-500 focus:border-indigo-500 text-black"
->
-  <option value="" className="text-black">Direct Message…</option>
-  {otherUsers.map((u) => (
-    <option 
-      key={u.uid} 
-      value={dmId(auth.currentUser.uid, u.uid)}
-      className="text-black"
-    >
-      {u.isAdmin ? "Admin" : u.name || u.email}
-    </option>
-  ))}
-</select>
-    </div>
 
-    <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-gray-150">
-      {msgs.length === 0 ? (
-        <div className="h-full flex flex-col items-center justify-center text-center">
-          <ChatBubbleLeftRightIcon className="h-12 w-12 text-gray-300 mb-2" />
-          <h3 className="text-lg font-medium text-gray-500">No messages yet</h3>
-          <p className="text-sm text-gray-400 mt-1">
-            {roomId === GENERAL_ROOM
-              ? "Send a message to start the conversation!"
-              : "Say hello to your teammate!"}
-          </p>
-        </div>
-      ) : (
-        msgs.map((m) => (
-          <div
-            key={m.id}
-            className={`flex ${
-              m.senderUid === auth.currentUser.uid ? "justify-end" : "justify-start"
-            }`}
-          >
-            <div
-              className={`px-4 py-2 rounded-lg max-w-xs md:max-w-md lg:max-w-lg ${
-                m.senderUid === auth.currentUser.uid
-                  ? "bg-indigo-600"
-                  : "bg-white border border-gray-200"
-              }`}
-            >
-              {m.senderUid !== auth.currentUser.uid && (
-                <p className="text-xs font-medium text-indigo-600 mb-1">
-                  {m.senderName}
-                </p>
+        {activeTab === "chat" && (
+          <div className="bg-white rounded-xl shadow-sm flex flex-col h-[calc(100vh-180px)] sm:h-[calc(100vh-200px)]">
+            <div className="p-3 sm:p-4 border-b flex items-center space-x-2 overflow-x-auto">
+              <button 
+                className={`px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm rounded-lg flex items-center whitespace-nowrap ${
+                  roomId === GENERAL_ROOM ? "bg-indigo-600 text-white" : "bg-gray-200 hover:bg-gray-300"
+                }`} 
+                onClick={() => setRoomId(GENERAL_ROOM)}
+              >
+                <UserGroupIcon className="h-3 sm:h-4 w-3 sm:w-4 mr-1 sm:mr-2" />
+                # General
+              </button>
+              <select 
+                value={roomId.startsWith("dm_") ? roomId : ""} 
+                onChange={(e) => setRoomId(e.target.value)} 
+                className="border rounded-lg text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-1.5 focus:ring-indigo-500 focus:border-indigo-500 text-black whitespace-nowrap"
+              >
+                <option value="" className="text-black">Direct Message…</option>
+                {otherUsers.map((u) => (
+                  <option 
+                    key={u.uid} 
+                    value={dmId(auth.currentUser.uid, u.uid)}
+                    className="text-black truncate"
+                  >
+                    {u.isAdmin ? "Admin" : u.name || u.email}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex-1 p-3 sm:p-4 overflow-y-auto space-y-2 sm:space-y-3 bg-gray-50">
+              {msgs.length === 0 ? (
+                <div className="h-full flex flex-col items-center justify-center text-center p-4">
+                  <ChatBubbleLeftRightIcon className="h-10 sm:h-12 w-10 sm:w-12 text-gray-300 mb-2" />
+                  <h3 className="text-sm sm:text-base font-medium text-gray-500">No messages yet</h3>
+                  <p className="text-xs sm:text-sm text-gray-400 mt-1">
+                    {roomId === GENERAL_ROOM
+                      ? "Send a message to start the conversation!"
+                      : "Say hello to your teammate!"}
+                  </p>
+                </div>
+              ) : (
+                msgs.map((m) => (
+                  <div
+                    key={m.id}
+                    className={`flex ${
+                      m.senderUid === auth.currentUser.uid ? "justify-end" : "justify-start"
+                    }`}
+                  >
+                    <div
+                      className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg max-w-[90%] sm:max-w-[80%] ${
+                        m.senderUid === auth.currentUser.uid
+                          ? "bg-indigo-600"
+                          : "bg-white border border-gray-200"
+                      }`}
+                    >
+                      {m.senderUid !== auth.currentUser.uid && (
+                        <p className="text-xs font-medium text-indigo-600 mb-1">
+                          {m.senderName}
+                        </p>
+                      )}
+                      <p className={`text-xs sm:text-sm ${
+                        m.senderUid === auth.currentUser.uid ? "text-white" : "text-black"
+                      }`}>
+                        {m.text}
+                      </p>
+                      <p
+                        className={`text-[10px] mt-1 text-right ${
+                          m.senderUid === auth.currentUser.uid ? "text-indigo-200" : "text-gray-500"
+                        }`}
+                      >
+                        {m.createdAt?.toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                ))
               )}
-              <p className={`text-sm ${
-                m.senderUid === auth.currentUser.uid ? "text-white" : "text-black"
-              }`}>
-                {m.text}
-              </p>
-              <p
-                className={`text-[10px] mt-1 text-right ${
-                  m.senderUid === auth.currentUser.uid ? "text-indigo-200" : "text-gray-500"
+              <div ref={bottomRef} />
+            </div>
+
+            <form 
+              onSubmit={(e) => { e.preventDefault(); sendMsg(); }} 
+              className="p-3 sm:p-4 border-t flex items-center space-x-2 bg-white"
+            >
+              <input
+                value={msgInput}
+                onChange={(e) => setMsgInput(e.target.value)}
+                className="flex-grow border rounded-full px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-black"
+                placeholder={
+                  roomId === GENERAL_ROOM
+                    ? "Message #general"
+                    : `Message ${otherUsers.find(u => roomId.includes(u.uid))?.name || ''}`
+                }
+              />
+              <button
+                type="submit"
+                disabled={!msgInput.trim() || sending}
+                className={`p-1.5 sm:p-2 rounded-full ${
+                  msgInput.trim()
+                    ? "bg-indigo-600 text-white hover:bg-indigo-700"
+                    : "bg-gray-200 text-gray-400 cursor-not-allowed"
                 }`}
               >
-                {m.createdAt?.toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </p>
-            </div>
+                {sending ? (
+                  <ArrowPathIcon className="h-4 sm:h-5 w-4 sm:w-5 animate-spin" />
+                ) : (
+                  <PaperAirplaneIcon className="h-4 sm:h-5 w-4 sm:w-5" />
+                )}
+              </button>
+            </form>
           </div>
-        ))
-      )}
-      <div ref={bottomRef} />
-    </div>
-
-    <form 
-      onSubmit={(e) => { e.preventDefault(); sendMsg(); }} 
-      className="p-4 border-t flex items-center space-x-2 bg-white"
-    >
-      <input
-        value={msgInput}
-        onChange={(e) => setMsgInput(e.target.value)}
-        className="flex-grow border rounded-full px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-black"
-        placeholder={
-          roomId === GENERAL_ROOM
-            ? "Message #general"
-            : `Message ${otherUsers.find(u => roomId.includes(u.uid))?.name || ''}`
-        }
-      />
-      <button
-        type="submit"
-        disabled={!msgInput.trim() || sending}
-        className={`p-2 rounded-full ${
-          msgInput.trim()
-            ? "bg-indigo-600 text-white hover:bg-indigo-700"
-            : "bg-gray-200 text-gray-400 cursor-not-allowed"
-        }`}
-      >
-        {sending ? (
-          <ArrowPathIcon className="h-5 w-5 animate-spin" />
-        ) : (
-          <PaperAirplaneIcon className="h-5 w-5" />
         )}
-      </button>
-    </form>
-  </div>
-)}
       </main>
     </div>
   );
@@ -643,23 +729,23 @@ const StatCard = ({ title, value, icon, trend, change, color }) => {
 
   return (
     <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-      <div className="p-5">
+      <div className="p-4 sm:p-5">
         <div className="flex items-center">
-          <div className={`flex-shrink-0 p-3 rounded-lg ${colorClasses[color]}`}>
+          <div className={`flex-shrink-0 p-2 sm:p-3 rounded-lg ${colorClasses[color]}`}>
             {icon}
           </div>
-          <div className="ml-4">
-            <p className="text-sm font-medium text-gray-500">{title}</p>
-            <p className="text-2xl font-semibold text-gray-900">{value}</p>
+          <div className="ml-3 sm:ml-4">
+            <p className="text-xs sm:text-sm font-medium text-gray-500">{title}</p>
+            <p className="text-xl sm:text-2xl font-semibold text-gray-900">{value}</p>
           </div>
         </div>
-        <div className="mt-4 flex items-center">
+        <div className="mt-3 sm:mt-4 flex items-center">
           {trend === "up" ? (
-            <ArrowUpCircleIcon className="h-5 w-5 text-green-500" />
+            <ArrowUpCircleIcon className="h-4 sm:h-5 w-4 sm:w-5 text-green-500" />
           ) : (
-            <ArrowUpCircleIcon className="h-5 w-5 text-red-500 transform rotate-180" />
+            <ArrowUpCircleIcon className="h-4 sm:h-5 w-4 sm:w-5 text-red-500 transform rotate-180" />
           )}
-          <span className={`ml-2 text-sm font-medium ${
+          <span className={`ml-1 sm:ml-2 text-xs sm:text-sm font-medium ${
             trend === "up" ? "text-green-600" : "text-red-600"
           }`}>
             {change} {trend === "up" ? "increase" : "decrease"} from last month
@@ -672,9 +758,9 @@ const StatCard = ({ title, value, icon, trend, change, color }) => {
 
 const ChartCard = ({ title, children }) => (
   <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-    <div className="px-6 py-4 border-b border-gray-200">
-      <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
+    <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200">
+      <h2 className="text-base sm:text-lg font-semibold text-gray-900">{title}</h2>
     </div>
-    <div className="p-6 h-64">{children}</div>
+    <div className="p-4 sm:p-6 h-64">{children}</div>
   </div>
 );
