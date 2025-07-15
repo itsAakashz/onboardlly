@@ -106,7 +106,7 @@ export default function HomePage() {
         </nav>
 
         {/* Hero Section */}
-        <section className="relative bg-gradient-to-br from-indigo-600 to-blue-600 overflow-hidden">
+        <section className="relative bg-gradient-to-br from-indigo-900 overflow-hidden">
           <div className="max-w-7xl mx-auto">
             <div className="relative z-10 pb-8 bg-transparent sm:pb-16 md:pb-20 lg:max-w-2xl lg:w-full lg:pb-28 xl:pb-32">
               <div className="pt-10 sm:pt-16 lg:pt-8 lg:pb-14 lg:overflow-hidden">
@@ -114,7 +114,7 @@ export default function HomePage() {
                   <div className="sm:text-center lg:text-left">
                     <h1 className="text-4xl tracking-tight font-extrabold text-white sm:text-5xl md:text-6xl">
                       <span className="block">Modern Employee</span>
-                      <span className="block text-indigo-200">Onboarding Platform</span>
+                      <span className="block text-yellow-300">Onboarding Platform</span>
                     </h1>
                     <p className="mt-3 text-base text-indigo-100 sm:mt-5 sm:text-lg sm:max-w-xl sm:mx-auto md:mt-5 md:text-xl lg:mx-0">
                       Automate and personalize your startup's employee onboarding with AI-powered task lists, interactive tutorials, and real-time progress tracking.
@@ -123,7 +123,7 @@ export default function HomePage() {
                       <div className="rounded-md shadow">
                         <button
                           onClick={() => setShowModal(true)}
-                          className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-indigo-600 bg-white hover:bg-gray-50 md:py-4 md:text-lg md:px-10"
+                          className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-black-900 bg-white hover:bg-gray-200 md:py-4 md:text-lg md:px-10"
                         >
                           Get Started
                         </button>

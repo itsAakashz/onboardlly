@@ -2,6 +2,14 @@
   "compilerOptions": {
     "paths": {
       "@/*": ["./src/*"]
-    }
+    },
+    // Add typeRoots to specify where type definitions are found
+    "typeRoots": [
+      "./node_modules/@types"
+    ],
+    // Or explicitly include node types if needed
+    // "types": ["node"]
   }
 }
+
+
