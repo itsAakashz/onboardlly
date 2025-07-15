@@ -28,8 +28,8 @@ import {
   PointElement,
   LineElement,
 } from "chart.js";
-import { 
-  PaperAirplaneIcon, 
+import {
+  PaperAirplaneIcon,
   ArrowPathIcon,
   CheckCircleIcon,
   ClockIcon,
@@ -41,6 +41,7 @@ import {
   Bars3Icon,
   XMarkIcon
 } from "@heroicons/react/24/outline";
+import TasksTab from '../../../../components/Dashboard/admin/TasksTab'; // Adjust the path as needed
 
 ChartJS.register(
   CategoryScale,
@@ -70,30 +71,24 @@ export default function EmployeePage() {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const bottomRef = useRef(null);
+  const [allTasks, setAllTasks] = useState([]);
+  const [allEmployees, setAllEmployees] = useState([]);
+  const [playingVideo, setPlayingVideo] = useState(null);
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (user) => {
+    const unsubAuth = onAuthStateChanged(auth, (user) => {
       if (!user) {
         setError("You must be logged in to access this page.");
         setLoading(false);
         return;
       }
 
-      try {
-        setLoading(true);
-        const allSnap = await getDocs(collectionGroup(db, "employees"));
+      setLoading(true);
+
+      // Real-time employees
+      const unsubEmps = onSnapshot(collectionGroup(db, "employees"), (allSnap) => {
         const allEmps = allSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
-
-        // Inject admin user into employee list
-        const adminUser = {
-          uid: "ADMIN",
-          name: "Admin",
-          email: "admin@company.com",
-          isAdmin: true,
-        };
-        if (!allEmps.some((u) => u.uid === "ADMIN")) allEmps.push(adminUser);
-
-        setEmployees(allEmps);
+        setAllEmployees(allEmps);
 
         const meDoc = allEmps.find((e) => e.uid === user.uid);
         if (!meDoc) {
@@ -103,19 +98,38 @@ export default function EmployeePage() {
         }
         setEmployeeData(meDoc);
 
-        const taskSnap = await getDocs(query(collection(db, "tasks"), where("assignedTo", "==", meDoc.id)));
-        setTasksData(taskSnap.docs.map((d) => ({ id: d.id, ...d.data() })));
+        // Real-time tasks for this user
+        const qTasks = query(collection(db, "tasks"), where("assignedTo", "==", meDoc.id));
+        const unsubTasks = onSnapshot(qTasks, (taskSnap) => {
+          setTasksData(taskSnap.docs.map((d) => ({ id: d.id, ...d.data() })));
+        });
 
-        const vidSnap = await getDocs(collection(db, "videos"));
-        setVideoData(vidSnap.docs.map((d) => ({ id: d.id, ...d.data() })));
-      } catch (e) {
-        console.error(e);
-        setError("Failed to load data.");
-      } finally {
+        // Real-time all tasks (for team average)
+        const unsubAllTasks = onSnapshot(collection(db, "tasks"), (tasksSnap) => {
+          setAllTasks(tasksSnap.docs.map((d) => ({ id: d.id, ...d.data() })));
+        });
+
+        // Real-time videos
+        const unsubVideos = onSnapshot(collection(db, "videos"), (vidSnap) => {
+          setVideoData(vidSnap.docs.map((d) => ({ id: d.id, ...d.data() })));
+        });
+
         setLoading(false);
-      }
+
+        // Cleanup
+        return () => {
+          unsubTasks();
+          unsubAllTasks();
+          unsubVideos();
+        };
+      });
+
+      // Cleanup
+      return () => unsubEmps();
     });
-    return () => unsub();
+
+    // Cleanup
+    return () => unsubAuth();
   }, []);
 
   useEffect(() => {
@@ -156,8 +170,8 @@ export default function EmployeePage() {
         status: newStatus
       });
       // Update local state
-      setTasksData(tasksData.map(task => 
-        task.id === taskId ? {...task, status: newStatus} : task
+      setTasksData(tasksData.map(task =>
+        task.id === taskId ? { ...task, status: newStatus } : task
       ));
     } catch (error) {
       console.error("Error updating task status:", error);
@@ -192,8 +206,8 @@ export default function EmployeePage() {
   const videoViewsData = {
     labels: videoData.map((v) => v.title),
     datasets: [
-      { 
-        data: videoData.map((v) => v.views || 0), 
+      {
+        data: videoData.map((v) => v.views || 0),
         backgroundColor: "rgba(99, 102, 241, 0.6)",
         borderColor: "rgba(99, 102, 241, 1)",
         borderWidth: 1
@@ -222,6 +236,10 @@ export default function EmployeePage() {
       }
     ]
   };
+
+  const teamProgress = allEmployees.length
+    ? allEmployees.reduce((sum, emp) => sum + (emp.progress || 0), 0) / allEmployees.length
+    : 0;
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -263,6 +281,7 @@ export default function EmployeePage() {
                 <ChatBubbleLeftRightIcon className="h-8 w-8 text-indigo-600" />
                 <span className="ml-2 text-xl font-bold text-gray-900">WorkHub</span>
               </div>
+              // Update your navigation buttons in the EmployeePage component
               <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
                 <button
                   onClick={() => setActiveTab("dashboard")}
@@ -274,7 +293,13 @@ export default function EmployeePage() {
                   onClick={() => setActiveTab("tasks")}
                   className={`${activeTab === "tasks" ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium`}
                 >
-                  Tasks
+                  My Tasks
+                </button>
+                <button
+                  onClick={() => setActiveTab("assigned-tasks")}
+                  className={`${activeTab === "assigned-tasks" ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium`}
+                >
+                  Assigned Tasks
                 </button>
                 <button
                   onClick={() => setActiveTab("videos")}
@@ -353,6 +378,17 @@ export default function EmployeePage() {
               >
                 Team Chat
               </button>
+
+              // Update your mobile menu buttons
+              <button
+                onClick={() => {
+                  setActiveTab("assigned-tasks");
+                  setMobileMenuOpen(false);
+                }}
+                className={`${activeTab === "assigned-tasks" ? 'bg-indigo-50 border-indigo-500 text-indigo-700' : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'} block pl-3 pr-4 py-2 border-l-4 text-base font-medium`}
+              >
+                Assigned Tasks
+              </button>
               <button
                 onClick={handleLogout}
                 className="block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700"
@@ -376,8 +412,8 @@ export default function EmployeePage() {
                     <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">Welcome back, {name}!</h1>
                     <p className="mt-1 sm:mt-2 opacity-90 text-sm sm:text-base">{role} • {department}</p>
                     <div className="mt-3 sm:mt-4 w-full bg-white bg-opacity-20 rounded-full h-2.5">
-                      <div 
-                        className="bg-white h-2.5 rounded-full" 
+                      <div
+                        className="bg-white h-2.5 rounded-full"
                         style={{ width: `${progress}%` }}
                       ></div>
                     </div>
@@ -394,33 +430,33 @@ export default function EmployeePage() {
 
             {/* Stats Cards */}
             <div className="grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-6 sm:mb-8">
-              <StatCard 
-                title="Total Tasks" 
-                value={tasksData.length} 
+              <StatCard
+                title="Total Tasks"
+                value={tasksData.length}
                 icon={<CheckCircleIcon className="h-5 sm:h-6 w-5 sm:w-6 text-indigo-600" />}
                 trend="up"
                 change="12%"
                 color="indigo"
               />
-              <StatCard 
-                title="Completed" 
-                value={tasksData.filter(t => t.status === "completed").length} 
+              <StatCard
+                title="Completed"
+                value={tasksData.filter(t => t.status === "completed").length}
                 icon={<CheckCircleIcon className="h-5 sm:h-6 w-5 sm:w-6 text-green-600" />}
                 trend="up"
                 change="8%"
                 color="green"
               />
-              <StatCard 
-                title="In Progress" 
-                value={tasksData.filter(t => t.status === "in-progress").length} 
+              <StatCard
+                title="In Progress"
+                value={tasksData.filter(t => t.status === "in-progress").length}
                 icon={<ArrowPathIcon className="h-5 sm:h-6 w-5 sm:w-6 text-amber-600" />}
                 trend="down"
                 change="3%"
                 color="amber"
               />
-              <StatCard 
-                title="Training Videos" 
-                value={videoData.length} 
+              <StatCard
+                title="Training Videos"
+                value={videoData.length}
                 icon={<VideoCameraIcon className="h-5 sm:h-6 w-5 sm:w-6 text-purple-600" />}
                 trend="up"
                 change="24%"
@@ -431,26 +467,26 @@ export default function EmployeePage() {
             {/* Charts Row */}
             <div className="grid grid-cols-1 gap-6 mb-6 sm:mb-8 lg:grid-cols-2">
               <ChartCard title="Task Status Distribution">
-                <Pie 
-                  data={taskStatusData} 
-                  options={{ 
-                    plugins: { 
-                      legend: { 
+                <Pie
+                  data={taskStatusData}
+                  options={{
+                    plugins: {
+                      legend: {
                         position: 'bottom',
                         labels: {
                           usePointStyle: true,
                           padding: 20
                         }
-                      } 
+                      }
                     },
                     maintainAspectRatio: false
-                  }} 
+                  }}
                 />
               </ChartCard>
               <ChartCard title="Your Progress vs Team Average">
-                <Line 
-                  data={progressData} 
-                  options={{ 
+                <Line
+                  data={progressData}
+                  options={{
                     responsive: true,
                     plugins: {
                       legend: {
@@ -468,7 +504,7 @@ export default function EmployeePage() {
                       }
                     },
                     maintainAspectRatio: false
-                  }} 
+                  }}
                 />
               </ChartCard>
             </div>
@@ -481,10 +517,9 @@ export default function EmployeePage() {
               <div className="divide-y divide-gray-200">
                 {tasksData.slice(0, 5).map((task) => (
                   <div key={task.id} className="px-4 sm:px-6 py-3 sm:py-4 flex items-center">
-                    <div className={`flex-shrink-0 h-8 sm:h-10 w-8 sm:w-10 rounded-full flex items-center justify-center ${
-                      task.status === "completed" ? "bg-green-100" : 
+                    <div className={`flex-shrink-0 h-8 sm:h-10 w-8 sm:w-10 rounded-full flex items-center justify-center ${task.status === "completed" ? "bg-green-100" :
                       task.status === "in-progress" ? "bg-amber-100" : "bg-red-100"
-                    }`}>
+                      }`}>
                       {task.status === "completed" ? (
                         <CheckCircleIcon className="h-5 sm:h-6 w-5 sm:w-6 text-green-600" />
                       ) : task.status === "in-progress" ? (
@@ -514,9 +549,6 @@ export default function EmployeePage() {
             <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
               <h2 className="text-base sm:text-lg font-semibold text-gray-900">Your Tasks</h2>
               <div className="flex space-x-2">
-                <button className="px-2 sm:px-3 py-1 bg-indigo-600 text-white text-xs sm:text-sm rounded-lg hover:bg-indigo-700">
-                  Add Task
-                </button>
                 <button className="px-2 sm:px-3 py-1 border border-gray-300 text-gray-700 text-xs sm:text-sm rounded-lg hover:bg-gray-50">
                   Filter
                 </button>
@@ -528,11 +560,11 @@ export default function EmployeePage() {
                   <div key={task.id} className="px-4 sm:px-6 py-3 sm:py-4 flex items-start">
                     <div className="flex-shrink-0 pt-1">
                       <input 
-  type="checkbox" 
-  checked={task.status === "completed"}
-  onChange={() => handleTaskStatusChange(task.id, task.status === "completed" ? "not-started" : "completed")}
-  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-/>
+                        type="checkbox" 
+                        checked={task.status === "completed"}
+                        onChange={() => handleTaskStatusChange(task.id, task.status === "completed" ? "not-started" : "completed")}
+                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                      />
                     </div>
                     <div className="ml-3 flex-1 min-w-0">
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
@@ -570,30 +602,75 @@ export default function EmployeePage() {
         )}
 
         {activeTab === "videos" && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {videoData.length > 0 ? (
               videoData.map((video) => (
-                <div key={video.id} className="bg-white rounded-xl shadow-sm overflow-hidden">
-                  <div className="bg-gray-200 h-32 sm:h-40 flex items-center justify-center">
-                    <VideoCameraIcon className="h-10 sm:h-12 w-10 sm:w-12 text-gray-400" />
-                  </div>
-                  <div className="p-3 sm:p-4">
-                    <h3 className="text-sm sm:text-base font-medium text-gray-900 truncate">{video.title}</h3>
-                    <p className="mt-1 text-xs sm:text-sm text-gray-500 line-clamp-2">{video.description}</p>
-                    <div className="mt-3 sm:mt-4 flex items-center justify-between">
-                      <span className="text-xs text-gray-500">{video.views || 0} views</span>
-                      <button className="px-2 sm:px-3 py-1 bg-indigo-600 text-white text-xs sm:text-sm rounded-lg hover:bg-indigo-700">
-                        Watch
-                      </button>
+                <div key={video.id} className="bg-white rounded-xl shadow-lg overflow-hidden transition hover:shadow-2xl">
+                  {/* Thumbnail or Icon */}
+                  {!playingVideo || playingVideo.id !== video.id ? (
+                    <div className="relative bg-gradient-to-br from-indigo-100 to-purple-100 h-40 flex items-center justify-center">
+                      <VideoCameraIcon className="h-16 w-16 text-indigo-400 opacity-70" />
+                      <div className="absolute bottom-2 right-2 bg-white bg-opacity-80 rounded-full px-3 py-1 text-xs text-indigo-700 font-semibold shadow">
+                        {video.views || 0} views
+                      </div>
                     </div>
+                  ) : null}
+
+                  <div className="p-5">
+                    <h3 className="text-lg font-bold text-indigo-900 truncate">{video.title}</h3>
+                    <p className="mt-1 text-sm text-gray-500 line-clamp-2">{video.description}</p>
+                    {/* Watch Button or Video Player */}
+                    {!playingVideo || playingVideo.id !== video.id ? (
+                      <div className="mt-4 flex justify-between items-center">
+                        <span className="text-xs text-gray-400">{video.platform || "Video"}</span>
+                        <button
+                          className="px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-lg font-semibold shadow hover:scale-105 transition"
+                          onClick={() => setPlayingVideo(video)}
+                        >
+                          <VideoCameraIcon className="h-5 w-5 inline-block mr-2" />
+                          Watch
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="mt-4 rounded-lg overflow-hidden bg-black">
+                        {video.url ? (
+                          video.url.includes("youtube.com") || video.url.includes("youtu.be") ? (
+                            <iframe
+                              width="100%"
+                              height="315"
+                              src={
+                                video.url.includes("watch?v=")
+                                  ? video.url.replace("watch?v=", "embed/")
+                                  : video.url.replace("youtu.be/", "youtube.com/embed/")
+                              }
+                              title={video.title}
+                              frameBorder="0"
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                              allowFullScreen
+                              className="w-full h-64"
+                            />
+                          ) : (
+                            <video controls width="100%" className="w-full h-64 bg-black rounded-lg" src={video.url} />
+                          )
+                        ) : (
+                          <div className="text-red-500 text-sm py-8 text-center">No video URL found.</div>
+                        )}
+                        <button
+                          className="mt-4 w-full px-4 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition"
+                          onClick={() => setPlayingVideo(null)}
+                        >
+                          Close
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))
             ) : (
-              <div className="col-span-full bg-white rounded-xl shadow-sm p-6 sm:p-12 text-center">
-                <VideoCameraIcon className="mx-auto h-10 sm:h-12 w-10 sm:w-12 text-gray-400" />
-                <h3 className="mt-2 text-sm font-medium text-gray-900">No training videos</h3>
-                <p className="mt-1 text-xs sm:text-sm text-gray-500">There are currently no training videos available.</p>
+              <div className="col-span-full bg-white rounded-xl shadow-sm p-8 text-center">
+                <VideoCameraIcon className="mx-auto h-16 w-16 text-indigo-200" />
+                <h3 className="mt-4 text-lg font-bold text-gray-900">No training videos</h3>
+                <p className="mt-2 text-sm text-gray-500">There are currently no training videos available.</p>
               </div>
             )}
           </div>
@@ -602,24 +679,23 @@ export default function EmployeePage() {
         {activeTab === "chat" && (
           <div className="bg-white rounded-xl shadow-sm flex flex-col h-[calc(100vh-180px)] sm:h-[calc(100vh-200px)]">
             <div className="p-3 sm:p-4 border-b flex items-center space-x-2 overflow-x-auto">
-              <button 
-                className={`px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm rounded-lg flex items-center whitespace-nowrap ${
-                  roomId === GENERAL_ROOM ? "bg-indigo-600 text-white" : "bg-gray-200 hover:bg-gray-300"
-                }`} 
+              <button
+                className={`px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm rounded-lg flex items-center whitespace-nowrap ${roomId === GENERAL_ROOM ? "bg-indigo-600 text-white" : "bg-gray-200 hover:bg-gray-300"
+                  }`}
                 onClick={() => setRoomId(GENERAL_ROOM)}
               >
                 <UserGroupIcon className="h-3 sm:h-4 w-3 sm:w-4 mr-1 sm:mr-2" />
                 # General
               </button>
-              <select 
-                value={roomId.startsWith("dm_") ? roomId : ""} 
-                onChange={(e) => setRoomId(e.target.value)} 
+              <select
+                value={roomId.startsWith("dm_") ? roomId : ""}
+                onChange={(e) => setRoomId(e.target.value)}
                 className="border rounded-lg text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-1.5 focus:ring-indigo-500 focus:border-indigo-500 text-black whitespace-nowrap"
               >
                 <option value="" className="text-black">Direct Message…</option>
                 {otherUsers.map((u) => (
-                  <option 
-                    key={u.uid} 
+                  <option
+                    key={u.uid}
                     value={dmId(auth.currentUser.uid, u.uid)}
                     className="text-black truncate"
                   >
@@ -644,31 +720,27 @@ export default function EmployeePage() {
                 msgs.map((m) => (
                   <div
                     key={m.id}
-                    className={`flex ${
-                      m.senderUid === auth.currentUser.uid ? "justify-end" : "justify-start"
-                    }`}
+                    className={`flex ${m.senderUid === auth.currentUser.uid ? "justify-end" : "justify-start"
+                      }`}
                   >
                     <div
-                      className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg max-w-[90%] sm:max-w-[80%] ${
-                        m.senderUid === auth.currentUser.uid
-                          ? "bg-indigo-600"
-                          : "bg-white border border-gray-200"
-                      }`}
+                      className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg max-w-[90%] sm:max-w-[80%] ${m.senderUid === auth.currentUser.uid
+                        ? "bg-indigo-600"
+                        : "bg-white border border-gray-200"
+                        }`}
                     >
                       {m.senderUid !== auth.currentUser.uid && (
                         <p className="text-xs font-medium text-indigo-600 mb-1">
                           {m.senderName}
                         </p>
                       )}
-                      <p className={`text-xs sm:text-sm ${
-                        m.senderUid === auth.currentUser.uid ? "text-white" : "text-black"
-                      }`}>
+                      <p className={`text-xs sm:text-sm ${m.senderUid === auth.currentUser.uid ? "text-white" : "text-black"
+                        }`}>
                         {m.text}
                       </p>
                       <p
-                        className={`text-[10px] mt-1 text-right ${
-                          m.senderUid === auth.currentUser.uid ? "text-indigo-200" : "text-gray-500"
-                        }`}
+                        className={`text-[10px] mt-1 text-right ${m.senderUid === auth.currentUser.uid ? "text-indigo-200" : "text-gray-500"
+                          }`}
                       >
                         {m.createdAt?.toLocaleTimeString([], {
                           hour: "2-digit",
@@ -682,8 +754,8 @@ export default function EmployeePage() {
               <div ref={bottomRef} />
             </div>
 
-            <form 
-              onSubmit={(e) => { e.preventDefault(); sendMsg(); }} 
+            <form
+              onSubmit={(e) => { e.preventDefault(); sendMsg(); }}
               className="p-3 sm:p-4 border-t flex items-center space-x-2 bg-white"
             >
               <input
@@ -699,11 +771,10 @@ export default function EmployeePage() {
               <button
                 type="submit"
                 disabled={!msgInput.trim() || sending}
-                className={`p-1.5 sm:p-2 rounded-full ${
-                  msgInput.trim()
-                    ? "bg-indigo-600 text-white hover:bg-indigo-700"
-                    : "bg-gray-200 text-gray-400 cursor-not-allowed"
-                }`}
+                className={`p-1.5 sm:p-2 rounded-full ${msgInput.trim()
+                  ? "bg-indigo-600 text-white hover:bg-indigo-700"
+                  : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                  }`}
               >
                 {sending ? (
                   <ArrowPathIcon className="h-4 sm:h-5 w-4 sm:w-5 animate-spin" />
@@ -713,6 +784,16 @@ export default function EmployeePage() {
               </button>
             </form>
           </div>
+        )}
+
+        {activeTab === "assigned-tasks" && (
+          <TasksTab 
+            task={{ title: '', description: '', assignedTo: '', dueDate: new Date() }}
+            tasks={allTasks}
+            employees={allEmployees}
+            setTask={() => {}} // You can implement this if needed
+            setTasks={setAllTasks}
+          />
         )}
       </main>
     </div>
@@ -745,9 +826,8 @@ const StatCard = ({ title, value, icon, trend, change, color }) => {
           ) : (
             <ArrowUpCircleIcon className="h-4 sm:h-5 w-4 sm:w-5 text-red-500 transform rotate-180" />
           )}
-          <span className={`ml-1 sm:ml-2 text-xs sm:text-sm font-medium ${
-            trend === "up" ? "text-green-600" : "text-red-600"
-          }`}>
+          <span className={`ml-1 sm:ml-2 text-xs sm:text-sm font-medium ${trend === "up" ? "text-green-600" : "text-red-600"
+            }`}>
             {change} {trend === "up" ? "increase" : "decrease"} from last month
           </span>
         </div>
