@@ -1,4 +1,3 @@
-// Employee Dashboard with integrated Chat
 "use client";
 import { useEffect, useState, useRef } from "react";
 import { db, auth } from "../../../../lib/firebase";
@@ -14,7 +13,7 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import { Bar, Pie } from "react-chartjs-2";
+import { Bar, Pie, Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -24,10 +23,32 @@ import {
   Tooltip,
   Legend,
   ArcElement,
+  PointElement,
+  LineElement,
 } from "chart.js";
-import { PaperAirplaneIcon } from "@heroicons/react/24/outline";
+import { 
+  PaperAirplaneIcon, 
+  ArrowPathIcon,
+  CheckCircleIcon,
+  ClockIcon,
+  XCircleIcon,
+  VideoCameraIcon,
+  UserGroupIcon,
+  ChatBubbleLeftRightIcon,
+  ArrowUpCircleIcon
+} from "@heroicons/react/24/outline";
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement);
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement,
+  PointElement,
+  LineElement
+);
 
 const GENERAL_ROOM = "general";
 
@@ -42,13 +63,13 @@ export default function EmployeePage() {
   const [msgInput, setMsgInput] = useState("");
   const [msgs, setMsgs] = useState([]);
   const [sending, setSending] = useState(false);
+  const [activeTab, setActiveTab] = useState("dashboard");
   const bottomRef = useRef(null);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (!user) {
         setError("You must be logged in to access this page.");
-        
         setLoading(false);
         return;
       }
@@ -123,6 +144,7 @@ export default function EmployeePage() {
     window.location.href = "/login";
   };
 
+  // Data for charts
   const taskStatusData = {
     labels: ["Completed", "In Progress", "Not Started"],
     datasets: [
@@ -132,100 +154,527 @@ export default function EmployeePage() {
           tasksData.filter((t) => t.status === "in-progress").length,
           tasksData.filter((t) => !t.status || t.status === "not-started").length,
         ],
-        backgroundColor: ["rgba(74,222,128,0.8)", "rgba(250,204,21,0.8)", "rgba(248,113,113,0.8)"],
+        backgroundColor: [
+          "rgba(74, 222, 128, 0.8)",
+          "rgba(250, 204, 21, 0.8)",
+          "rgba(248, 113, 113, 0.8)"
+        ],
+        borderColor: [
+          "rgba(74, 222, 128, 1)",
+          "rgba(250, 204, 21, 1)",
+          "rgba(248, 113, 113, 1)"
+        ],
+        borderWidth: 1,
       },
     ],
   };
 
   const videoViewsData = {
     labels: videoData.map((v) => v.title),
-    datasets: [{ data: videoData.map((v) => v.views || 0), backgroundColor: "rgba(99,102,241,0.6)" }],
+    datasets: [
+      { 
+        data: videoData.map((v) => v.views || 0), 
+        backgroundColor: "rgba(99, 102, 241, 0.6)",
+        borderColor: "rgba(99, 102, 241, 1)",
+        borderWidth: 1
+      }
+    ],
   };
 
-  if (loading) return <p className="p-6">Loading…</p>;
-  if (error) return <p className="p-6 text-red-500">{error}</p>;
+  const progressData = {
+    labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+    datasets: [
+      {
+        label: "Your Progress",
+        data: [30, 45, 60, 65, 80, 95],
+        borderColor: "rgba(99, 102, 241, 1)",
+        backgroundColor: "rgba(99, 102, 241, 0.1)",
+        tension: 0.3,
+        fill: true
+      },
+      {
+        label: "Team Average",
+        data: [20, 35, 50, 60, 70, 85],
+        borderColor: "rgba(74, 222, 128, 1)",
+        backgroundColor: "rgba(74, 222, 128, 0.1)",
+        tension: 0.3,
+        fill: true
+      }
+    ]
+  };
+
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500 mx-auto"></div>
+        <p className="mt-4 text-lg font-medium text-gray-700">Loading your dashboard...</p>
+      </div>
+    </div>
+  );
+
+  if (error) return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="text-center p-6 bg-white rounded-xl shadow-sm max-w-md">
+        <h2 className="text-xl font-bold text-red-500 mb-2">Error</h2>
+        <p className="text-gray-600 mb-4">{error}</p>
+        <button
+          onClick={() => window.location.href = "/login"}
+          className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
+        >
+          Go to Login
+        </button>
+      </div>
+    </div>
+  );
+
   if (!employeeData) return null;
 
   const { name, progress = 0, department, role } = employeeData;
   const otherUsers = employees.filter((e) => e.uid !== auth.currentUser.uid && e.uid);
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 md:p-8 flex flex-col space-y-8">
-      <header className="flex items-center justify-between bg-white rounded-xl shadow-sm p-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800">Welcome back, {name}!</h1>
-          <p className="text-gray-600 mt-1">{role} • {department}</p>
-        </div>
-        <button onClick={handleLogout} className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm">Log out</button>
-      </header>
-
-      <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="bg-white p-6 rounded-xl shadow-sm flex flex-col">
-          <h2 className="font-semibold mb-4">Tasks Overview</h2>
-          <div className="grid grid-cols-3 gap-4 mt-auto">
-            <Stat label="Total" value={tasksData.length} color="indigo" />
-            <Stat label="Completed" value={tasksData.filter((t) => t.status === "completed").length} color="green" />
-            <Stat label="In Progress" value={tasksData.filter((t) => t.status === "in-progress").length} color="amber" />
-          </div>
-        </div>
-        <ChartCard title="Task Status"><Pie data={taskStatusData} options={{ plugins: { legend: { position: "bottom" } } }} /></ChartCard>
-        <ChartCard title="Video Views"><Bar data={videoViewsData} options={{ plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }} /></ChartCard>
-      </section>
-
-      <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <ListCard title="Your Tasks">
-          {tasksData.length ? tasksData.map((t) => (
-            <div key={t.id} className="p-4 border-b last:border-0">
-              <p className={`font-medium ${t.status === "completed" ? "line-through text-gray-500" : "text-gray-800"}`}>{t.title}</p>
-              <p className="text-sm text-gray-600">{t.description}</p>
+    <div className="min-h-screen bg-gray-50">
+      {/* Navigation */}
+      <nav className="bg-white shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between h-16">
+            <div className="flex items-center">
+              <div className="flex-shrink-0 flex items-center">
+                <ChatBubbleLeftRightIcon className="h-8 w-8 text-indigo-600" />
+                <span className="ml-2 text-xl font-bold text-gray-900">WorkHub</span>
+              </div>
+              <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
+                <button
+                  onClick={() => setActiveTab("dashboard")}
+                  className={`${activeTab === "dashboard" ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium`}
+                >
+                  Dashboard
+                </button>
+                <button
+                  onClick={() => setActiveTab("tasks")}
+                  className={`${activeTab === "tasks" ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium`}
+                >
+                  Tasks
+                </button>
+                <button
+                  onClick={() => setActiveTab("videos")}
+                  className={`${activeTab === "videos" ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium`}
+                >
+                  Training
+                </button>
+                <button
+                  onClick={() => setActiveTab("chat")}
+                  className={`${activeTab === "chat" ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium`}
+                >
+                  Team Chat
+                </button>
+              </div>
             </div>
-          )) : <p className="p-4 text-gray-500">No tasks.</p>}
-        </ListCard>
-
-        <div className="bg-white rounded-xl shadow-sm flex flex-col h-[28rem]">
-          <div className="p-4 border-b flex items-center space-x-2">
-            <button className={`px-3 py-1.5 text-sm rounded-lg ${roomId === GENERAL_ROOM ? "bg-indigo-600 text-white" : "bg-gray-200"}`} onClick={() => setRoomId(GENERAL_ROOM)}># General</button>
-            <select value={roomId.startsWith("dm_") ? roomId : ""} onChange={(e) => setRoomId(e.target.value)} className="border rounded-lg text-sm px-2 py-1">
-              <option value="">Direct Message…</option>
-              {otherUsers.map((u) => (
-                <option key={u.uid} value={dmId(auth.currentUser.uid, u.uid)}>{u.isAdmin ? "Admin" : u.name || u.email}</option>
-              ))}
-            </select>
+            <div className="hidden sm:ml-6 sm:flex sm:items-center">
+              <button
+                onClick={handleLogout}
+                className="flex items-center text-sm font-medium text-gray-500 hover:text-gray-700"
+              >
+                <span>Sign out</span>
+              </button>
+            </div>
           </div>
+        </div>
+      </nav>
 
-          <div className="flex-1 p-4 overflow-y-auto space-y-3">
-            {msgs.length === 0 ? <p className="text-center text-gray-500">No messages.</p> : msgs.map((m) => (
-              <div key={m.id} className={`flex ${m.senderUid === auth.currentUser.uid ? "justify-end" : "justify-start"}`}>
-                <div className={`${m.senderUid === auth.currentUser.uid ? "bg-indigo-600 text-white" : "bg-gray-100"} px-4 py-2 rounded-lg max-w-xs md:max-w-md text-sm`}>
-                  <p>{m.text}</p>
-                  <p className="text-[10px] opacity-60 mt-1 text-right">{m.senderUid === auth.currentUser.uid ? "You" : m.senderName} • {m.createdAt?.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</p>
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {activeTab === "dashboard" && (
+          <>
+            {/* Welcome Card */}
+            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl shadow-lg overflow-hidden mb-8">
+              <div className="p-6 md:p-8 text-white">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <h1 className="text-2xl md:text-3xl font-bold">Welcome back, {name}!</h1>
+                    <p className="mt-2 opacity-90">{role} • {department}</p>
+                    <div className="mt-4 w-full bg-white bg-opacity-20 rounded-full h-2.5">
+                      <div 
+                        className="bg-white h-2.5 rounded-full" 
+                        style={{ width: `${progress}%` }}
+                      ></div>
+                    </div>
+                    <p className="mt-2 text-sm opacity-90">Your progress: {progress}%</p>
+                  </div>
+                  <div className="mt-4 md:mt-0">
+                    <button className="px-4 py-2 bg-white text-indigo-600 rounded-lg font-medium hover:bg-opacity-90 transition">
+                      View Profile
+                    </button>
+                  </div>
                 </div>
               </div>
-            ))}
-            <div ref={bottomRef} />
-          </div>
+            </div>
 
-          <form onSubmit={(e) => { e.preventDefault(); sendMsg(); }} className="p-4 border-t flex items-center space-x-2">
-            <input value={msgInput} onChange={(e) => setMsgInput(e.target.value)} className="flex-grow border rounded-full px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500" placeholder="Type a message…" />
-            <button type="submit" disabled={!msgInput.trim()} className={`p-2 rounded-full ${msgInput.trim() ? "bg-indigo-600 text-white" : "bg-gray-300"}`}> <PaperAirplaneIcon className="h-5 w-5" /> </button>
-          </form>
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              <StatCard 
+                title="Total Tasks" 
+                value={tasksData.length} 
+                icon={<CheckCircleIcon className="h-6 w-6 text-indigo-600" />}
+                trend="up"
+                change="12%"
+                color="indigo"
+              />
+              <StatCard 
+                title="Completed" 
+                value={tasksData.filter(t => t.status === "completed").length} 
+                icon={<CheckCircleIcon className="h-6 w-6 text-green-600" />}
+                trend="up"
+                change="8%"
+                color="green"
+              />
+              <StatCard 
+                title="In Progress" 
+                value={tasksData.filter(t => t.status === "in-progress").length} 
+                icon={<ArrowPathIcon className="h-6 w-6 text-amber-600" />}
+                trend="down"
+                change="3%"
+                color="amber"
+              />
+              <StatCard 
+                title="Training Videos" 
+                value={videoData.length} 
+                icon={<VideoCameraIcon className="h-6 w-6 text-purple-600" />}
+                trend="up"
+                change="24%"
+                color="purple"
+              />
+            </div>
+
+            {/* Charts Row */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+              <ChartCard title="Task Status Distribution">
+                <Pie 
+                  data={taskStatusData} 
+                  options={{ 
+                    plugins: { 
+                      legend: { 
+                        position: 'bottom',
+                        labels: {
+                          usePointStyle: true,
+                          padding: 20
+                        }
+                      } 
+                    } 
+                  }} 
+                />
+              </ChartCard>
+              <ChartCard title="Your Progress vs Team Average">
+                <Line 
+                  data={progressData} 
+                  options={{ 
+                    responsive: true,
+                    plugins: {
+                      legend: {
+                        position: 'bottom',
+                        labels: {
+                          usePointStyle: true,
+                          padding: 20
+                        }
+                      }
+                    },
+                    scales: {
+                      y: {
+                        beginAtZero: true,
+                        max: 100
+                      }
+                    }
+                  }} 
+                />
+              </ChartCard>
+            </div>
+
+            {/* Recent Activity */}
+            <div className="bg-white rounded-xl shadow-sm overflow-hidden mb-8">
+              <div className="px-6 py-4 border-b border-gray-200">
+                <h2 className="text-lg font-semibold text-gray-900">Recent Activity</h2>
+              </div>
+              <div className="divide-y divide-gray-200">
+                {tasksData.slice(0, 5).map((task) => (
+                  <div key={task.id} className="px-6 py-4 flex items-center">
+                    <div className={`flex-shrink-0 h-10 w-10 rounded-full flex items-center justify-center ${
+                      task.status === "completed" ? "bg-green-100" : 
+                      task.status === "in-progress" ? "bg-amber-100" : "bg-red-100"
+                    }`}>
+                      {task.status === "completed" ? (
+                        <CheckCircleIcon className="h-6 w-6 text-green-600" />
+                      ) : task.status === "in-progress" ? (
+                        <ArrowPathIcon className="h-6 w-6 text-amber-600" />
+                      ) : (
+                        <ClockIcon className="h-6 w-6 text-red-600" />
+                      )}
+                    </div>
+                    <div className="ml-4 flex-1">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium text-gray-900">{task.title}</p>
+                        <p className="text-xs text-gray-500">
+                          Due: {new Date(task.dueDate?.seconds * 1000).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <p className="text-sm text-gray-500">{task.description}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+
+        {activeTab === "tasks" && (
+          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-gray-900">Your Tasks</h2>
+              <div className="flex space-x-2">
+                <button className="px-3 py-1 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700">
+                  Add Task
+                </button>
+                <button className="px-3 py-1 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50">
+                  Filter
+                </button>
+              </div>
+            </div>
+            <div className="divide-y divide-gray-200">
+              {tasksData.length > 0 ? (
+                tasksData.map((task) => (
+                  <div key={task.id} className="px-6 py-4 flex items-start">
+                    <div className="flex-shrink-0 pt-1">
+                      <input 
+                        type="checkbox" 
+                        checked={task.status === "completed"}
+                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                      />
+                    </div>
+                    <div className="ml-3 flex-1">
+                      <div className="flex items-center justify-between">
+                        <p className={`text-sm font-medium ${
+                          task.status === "completed" ? "text-gray-500 line-through" : "text-gray-900"
+                        }`}>
+                          {task.title}
+                        </p>
+                        <span className={`px-2 py-1 text-xs rounded-full ${
+                          task.status === "completed" ? "bg-green-100 text-green-800" :
+                          task.status === "in-progress" ? "bg-amber-100 text-amber-800" :
+                          "bg-red-100 text-red-800"
+                        }`}>
+                          {task.status === "completed" ? "Completed" :
+                           task.status === "in-progress" ? "In Progress" : "Not Started"}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-500 mt-1">{task.description}</p>
+                      <div className="mt-2 flex items-center text-xs text-gray-500">
+                        <ClockIcon className="h-3 w-3 mr-1" />
+                        <span>Due: {new Date(task.dueDate?.seconds * 1000).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="px-6 py-12 text-center">
+                  <CheckCircleIcon className="mx-auto h-12 w-12 text-gray-400" />
+                  <h3 className="mt-2 text-sm font-medium text-gray-900">No tasks</h3>
+                  <p className="mt-1 text-sm text-gray-500">You currently have no assigned tasks.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {activeTab === "videos" && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {videoData.length > 0 ? (
+              videoData.map((video) => (
+                <div key={video.id} className="bg-white rounded-xl shadow-sm overflow-hidden">
+                  <div className="bg-gray-200 h-40 flex items-center justify-center">
+                    <VideoCameraIcon className="h-12 w-12 text-gray-400" />
+                  </div>
+                  <div className="p-4">
+                    <h3 className="text-lg font-medium text-gray-900">{video.title}</h3>
+                    <p className="mt-1 text-sm text-gray-500">{video.description}</p>
+                    <div className="mt-4 flex items-center justify-between">
+                      <span className="text-xs text-gray-500">{video.views || 0} views</span>
+                      <button className="px-3 py-1 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700">
+                        Watch
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="col-span-3 bg-white rounded-xl shadow-sm p-12 text-center">
+                <VideoCameraIcon className="mx-auto h-12 w-12 text-gray-400" />
+                <h3 className="mt-2 text-sm font-medium text-gray-900">No training videos</h3>
+                <p className="mt-1 text-sm text-gray-500">There are currently no training videos available.</p>
+              </div>
+            )}
+          </div>
+        )}
+{activeTab === "chat" && (
+  <div className="bg-white rounded-xl shadow-sm flex flex-col h-[calc(100vh-200px)]">
+    <div className="p-4 border-b flex items-center space-x-2">
+      <button 
+        className={`px-3 py-1.5 text-sm rounded-lg flex items-center ${
+          roomId === GENERAL_ROOM ? "bg-indigo-600 text-white" : "bg-gray-200 hover:bg-gray-300"
+        }`} 
+        onClick={() => setRoomId(GENERAL_ROOM)}
+      >
+        <UserGroupIcon className="h-4 w-4 mr-2" />
+        # General
+      </button>
+      <select 
+  value={roomId.startsWith("dm_") ? roomId : ""} 
+  onChange={(e) => setRoomId(e.target.value)} 
+  className="border rounded-lg text-sm px-3 py-1.5 focus:ring-indigo-500 focus:border-indigo-500 text-black"
+>
+  <option value="" className="text-black">Direct Message…</option>
+  {otherUsers.map((u) => (
+    <option 
+      key={u.uid} 
+      value={dmId(auth.currentUser.uid, u.uid)}
+      className="text-black"
+    >
+      {u.isAdmin ? "Admin" : u.name || u.email}
+    </option>
+  ))}
+</select>
+    </div>
+
+    <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-gray-150">
+      {msgs.length === 0 ? (
+        <div className="h-full flex flex-col items-center justify-center text-center">
+          <ChatBubbleLeftRightIcon className="h-12 w-12 text-gray-300 mb-2" />
+          <h3 className="text-lg font-medium text-gray-500">No messages yet</h3>
+          <p className="text-sm text-gray-400 mt-1">
+            {roomId === GENERAL_ROOM
+              ? "Send a message to start the conversation!"
+              : "Say hello to your teammate!"}
+          </p>
         </div>
-      </section>
-    </main>
+      ) : (
+        msgs.map((m) => (
+          <div
+            key={m.id}
+            className={`flex ${
+              m.senderUid === auth.currentUser.uid ? "justify-end" : "justify-start"
+            }`}
+          >
+            <div
+              className={`px-4 py-2 rounded-lg max-w-xs md:max-w-md lg:max-w-lg ${
+                m.senderUid === auth.currentUser.uid
+                  ? "bg-indigo-600"
+                  : "bg-white border border-gray-200"
+              }`}
+            >
+              {m.senderUid !== auth.currentUser.uid && (
+                <p className="text-xs font-medium text-indigo-600 mb-1">
+                  {m.senderName}
+                </p>
+              )}
+              <p className={`text-sm ${
+                m.senderUid === auth.currentUser.uid ? "text-white" : "text-black"
+              }`}>
+                {m.text}
+              </p>
+              <p
+                className={`text-[10px] mt-1 text-right ${
+                  m.senderUid === auth.currentUser.uid ? "text-indigo-200" : "text-gray-500"
+                }`}
+              >
+                {m.createdAt?.toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </p>
+            </div>
+          </div>
+        ))
+      )}
+      <div ref={bottomRef} />
+    </div>
+
+    <form 
+      onSubmit={(e) => { e.preventDefault(); sendMsg(); }} 
+      className="p-4 border-t flex items-center space-x-2 bg-white"
+    >
+      <input
+        value={msgInput}
+        onChange={(e) => setMsgInput(e.target.value)}
+        className="flex-grow border rounded-full px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-black"
+        placeholder={
+          roomId === GENERAL_ROOM
+            ? "Message #general"
+            : `Message ${otherUsers.find(u => roomId.includes(u.uid))?.name || ''}`
+        }
+      />
+      <button
+        type="submit"
+        disabled={!msgInput.trim() || sending}
+        className={`p-2 rounded-full ${
+          msgInput.trim()
+            ? "bg-indigo-600 text-white hover:bg-indigo-700"
+            : "bg-gray-200 text-gray-400 cursor-not-allowed"
+        }`}
+      >
+        {sending ? (
+          <ArrowPathIcon className="h-5 w-5 animate-spin" />
+        ) : (
+          <PaperAirplaneIcon className="h-5 w-5" />
+        )}
+      </button>
+    </form>
+  </div>
+)}
+      </main>
+    </div>
   );
 }
 
-const Stat = ({ label, value, color }) => (
-  <div className={`bg-${color}-50 rounded-lg p-3 text-center`}>
-    <p className={`text-2xl font-bold text-${color}-600`}>{value}</p>
-    <p className={`text-xs text-${color}-500`}>{label}</p>
-  </div>
-);
+const StatCard = ({ title, value, icon, trend, change, color }) => {
+  const colorClasses = {
+    indigo: "bg-indigo-50 text-indigo-600",
+    green: "bg-green-50 text-green-600",
+    amber: "bg-amber-50 text-amber-600",
+    purple: "bg-purple-50 text-purple-600",
+  };
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+      <div className="p-5">
+        <div className="flex items-center">
+          <div className={`flex-shrink-0 p-3 rounded-lg ${colorClasses[color]}`}>
+            {icon}
+          </div>
+          <div className="ml-4">
+            <p className="text-sm font-medium text-gray-500">{title}</p>
+            <p className="text-2xl font-semibold text-gray-900">{value}</p>
+          </div>
+        </div>
+        <div className="mt-4 flex items-center">
+          {trend === "up" ? (
+            <ArrowUpCircleIcon className="h-5 w-5 text-green-500" />
+          ) : (
+            <ArrowUpCircleIcon className="h-5 w-5 text-red-500 transform rotate-180" />
+          )}
+          <span className={`ml-2 text-sm font-medium ${
+            trend === "up" ? "text-green-600" : "text-red-600"
+          }`}>
+            {change} {trend === "up" ? "increase" : "decrease"} from last month
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const ChartCard = ({ title, children }) => (
-  <div className="bg-white rounded-xl shadow-sm p-6"><h2 className="font-semibold mb-4 text-gray-700">{title}</h2><div className="h-48">{children}</div></div>
-);
-
-const ListCard = ({ title, children }) => (
-  <div className="bg-white rounded-xl shadow-sm overflow-hidden"><div className="p-6 border-b"><h2 className="font-semibold text-gray-700">{title}</h2></div>{children}</div>
+  <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+    <div className="px-6 py-4 border-b border-gray-200">
+      <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
+    </div>
+    <div className="p-6 h-64">{children}</div>
+  </div>
 );
