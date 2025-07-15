@@ -146,7 +146,7 @@ export default function EmployeePage() {
 
   const handleLogout = async () => {
     await signOut(auth);
-    window.location.href = "/login";
+    window.location.href = "/";
   };
 
   const handleTaskStatusChange = async (taskId, newStatus) => {
@@ -238,7 +238,7 @@ export default function EmployeePage() {
         <h2 className="text-xl font-bold text-red-500 mb-2">Error</h2>
         <p className="text-gray-600 mb-4">{error}</p>
         <button
-          onClick={() => window.location.href = "/login"}
+          onClick={() => window.location.href = "/"}
           className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
         >
           Go to Login
