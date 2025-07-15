@@ -91,6 +91,7 @@ export default function HomePage() {
                 <div className="ml-10 flex items-center space-x-4">
                   <a href="#features" className="text-gray-900 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">Features</a>
                   <a href="#how-it-works" className="text-gray-900 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">How It Works</a>
+                  <a href="#download" className="text-gray-900 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">Download</a>
                 </div>
               </div>
               <div className="md:ml-4 flex items-center">
@@ -151,31 +152,57 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Logo Cloud */}
-        {/* <div className="bg-gray-50 py-12">
+        {/* App Download Section - MOVED BEFORE FEATURES SECTION */}
+        <section id="download" className="py-16 sm:py-24 lg:py-32 bg-indigo-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <p className="text-center text-sm font-semibold uppercase text-gray-500 tracking-wide">
-              Trusted by innovative startups worldwide
-            </p>
-            <div className="mt-6 grid grid-cols-2 gap-8 md:grid-cols-6 lg:grid-cols-5">
-              <div className="col-span-1 flex justify-center">
-                <img className="h-12" src="https://tailwindui.com/img/logos/tuple-logo-gray-400.svg" alt="Tuple" />
+            <div className="lg:text-center">
+              <h2 className="text-base text-indigo-600 font-semibold tracking-wide uppercase">Mobile App</h2>
+              <p className="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">
+                Download Our Mobile App
+              </p>
+              <p className="mt-4 max-w-2xl text-xl text-gray-500 lg:mx-auto">
+                Get the full Onboardly experience on your mobile device.
+              </p>
+            </div>
+
+            <div className="mt-10 flex flex-col items-center justify-center space-y-6 sm:flex-row sm:space-y-0 sm:space-x-6">
+              {/* Android Download */}
+              <div className="w-full sm:w-auto">
+                <a
+                  href="https://github.com/Adarshshrivastav991/Onboardllyapp/releases/download/onboardlly/app-release.apk"
+                  className="flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-gray-800 hover:bg-gray-900 md:py-4 md:text-lg md:px-10"
+                  download
+                >
+                  <svg className="h-8 w-8 mr-3" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M3 5.5C3 4.11929 4.11929 3 5.5 3H18.5C19.8807 3 21 4.11929 21 5.5V18.5C21 19.8807 19.8807 21 18.5 21H5.5C4.11929 21 3 19.8807 3 18.5V5.5Z" fill="#3DDC84"/>
+                    <path d="M12 16.5C14.4853 16.5 16.5 14.4853 16.5 12C16.5 9.51472 14.4853 7.5 12 7.5C9.51472 7.5 7.5 9.51472 7.5 12C7.5 14.4853 9.51472 16.5 12 16.5Z" fill="white"/>
+                    <path d="M12 8.5C12.2761 8.5 12.5 8.27614 12.5 8C12.5 7.72386 12.2761 7.5 12 7.5C11.7239 7.5 11.5 7.72386 11.5 8C11.5 8.27614 11.7239 8.5 12 8.5Z" fill="white" stroke="white"/>
+                  </svg>
+                  Download for Android
+                </a>
               </div>
-              <div className="col-span-1 flex justify-center">
-                <img className="h-12" src="https://tailwindui.com/img/logos/mirage-logo-gray-400.svg" alt="Mirage" />
-              </div>
-              <div className="col-span-1 flex justify-center">
-                <img className="h-12" src="https://tailwindui.com/img/logos/statickit-logo-gray-400.svg" alt="StaticKit" />
-              </div>
-              <div className="col-span-1 flex justify-center">
-                <img className="h-12" src="https://tailwindui.com/img/logos/transistor-logo-gray-400.svg" alt="Transistor" />
-              </div>
-              <div className="col-span-1 flex justify-center">
-                <img className="h-12" src="https://tailwindui.com/img/logos/workcation-logo-gray-400.svg" alt="Workcation" />
+
+              {/* iOS Download - You can replace the link when you have an iOS version */}
+              <div className="w-full sm:w-auto">
+                <a
+                  href="#"
+                  className="flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-gray-800 hover:bg-gray-900 md:py-4 md:text-lg md:px-10 opacity-50 cursor-not-allowed"
+                  aria-disabled="true"
+                >
+                  <svg className="h-8 w-8 mr-3" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M18.71 19.5C17.88 20.74 17 21.95 15.66 21.97C14.32 22 13.89 21.18 12.37 21.18C10.84 21.18 10.37 21.95 9.09999 22C7.78999 22.05 6.79999 20.68 5.95999 19.47C4.24999 16.91 2.93999 11.99 4.69999 8.96C5.56999 7.43 7.12999 6.53 8.81999 6.5C10.1 6.47 11.32 7.28 12.11 7.28C12.89 7.28 14.37 6.35 15.92 6.53C16.57 6.56 18.39 6.85 19.56 8.4C19.47 8.46 17.39 9.88 17.41 12.41C17.44 15.35 20.06 16.56 20.09 16.57C20.06 16.64 19.67 18.11 18.71 19.5ZM13 3.5C13.73 2.67 14.94 2.04 15.94 2C16.07 3.17 15.6 4.35 14.9 5.1C14.21 5.85 13.07 6.5 12 6.39C11.88 5.29 12.35 4.22 13 3.5Z" fill="white"/>
+                  </svg>
+                  Coming Soon for iOS
+                </a>
               </div>
             </div>
+
+            <div className="mt-10 text-center text-sm text-gray-500">
+              <p>Android APK version 1.0.0 • File size: ~25MB</p>
+              <p className="mt-2">Requires Android 8.0 or higher</p>
+            </div>
           </div>
-        </div> */}
+        </section>
 
         {/* Features Section */}
         <section id="features" className="py-16 sm:py-24 lg:py-32 bg-white">
@@ -291,9 +318,6 @@ export default function HomePage() {
                           <p className="text-sm font-medium text-gray-900">
                             Adarsh shrivastav
                           </p>
-                          {/* <p className="text-sm text-gray-500">
-                            HR Director, TechStart Inc.
-                          </p> */}
                         </div>
                       </div>
                     </div>
@@ -385,7 +409,6 @@ export default function HomePage() {
             </div>
           </div>
         )}
-
 
         {/* Footer */}
         <footer className="bg-gray-50">
