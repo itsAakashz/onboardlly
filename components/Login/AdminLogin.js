@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../../lib/firebase";
+import { signInWithEmailAndPassword, signOut } from "firebase/auth";
+import { auth, db } from "../../lib/firebase";
+import { collection, query, where, getDocs } from "firebase/firestore";
 
 export default function AdminLogin() {
   const [email, setEmail] = useState("");
@@ -9,17 +10,34 @@ export default function AdminLogin() {
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    setError("");
+
     try {
+      /* 1️⃣  First, check if this email is on the admin allow‑list */
+      const allowQ = query(
+        collection(db, "admins"),               // 🔑 new collection
+        where("email", "==", email.trim().toLowerCase())
+      );
+      const allowSnap = await getDocs(allowQ);
+
+      if (allowSnap.empty) {
+        setError("Not authorised.");
+        return; // Stop here, never attempt sign‑in
+      }
+
+      /* 2️⃣  Email is allowed → verify password with Firebase Auth */
       await signInWithEmailAndPassword(auth, email, password);
-      // ✅ Redirect without using Next.js router
+
+      /* 3️⃣  Success → redirect */
       window.location.href = "/dashboard/admin";
     } catch (err) {
-      setError("Invalid email or password");
+      await signOut(auth).catch(() => {});
+      setError("Invalid credentials or not authorised.");
     }
   };
 
   return (
-    <form onSubmit={handleLogin} className="space-y-4">
+    <form onSubmit={handleLogin} className="space-y-4 max-w-sm mx-auto">
       <input
         type="email"
         placeholder="Admin Email"
@@ -37,7 +55,10 @@ export default function AdminLogin() {
         required
       />
       {error && <p className="text-red-500 text-sm">{error}</p>}
-      <button type="submit" className="w-full bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700">
+      <button
+        type="submit"
+        className="w-full bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700"
+      >
         Login as Admin
       </button>
     </form>
