@@ -41,7 +41,6 @@ import {
   Bars3Icon,
   XMarkIcon
 } from "@heroicons/react/24/outline";
-import TasksTab from '../../../../components/Dashboard/admin/TasksTab'; // Adjust the path as needed
 
 ChartJS.register(
   CategoryScale,
@@ -72,7 +71,6 @@ export default function EmployeePage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const bottomRef = useRef(null);
   const [allTasks, setAllTasks] = useState([]);
-  const [allEmployees, setAllEmployees] = useState([]);
   const [playingVideo, setPlayingVideo] = useState(null);
 
   useEffect(() => {
@@ -88,8 +86,7 @@ export default function EmployeePage() {
       // Real-time employees
       const unsubEmps = onSnapshot(collectionGroup(db, "employees"), (allSnap) => {
         const allEmps = allSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
-        setAllEmployees(allEmps);
-        setEmployees(allEmps); // <-- Add this line
+        setEmployees(allEmps);
 
         const meDoc = allEmps.find((e) => e.uid === user.uid);
         if (!meDoc) {
@@ -105,11 +102,6 @@ export default function EmployeePage() {
           setTasksData(taskSnap.docs.map((d) => ({ id: d.id, ...d.data() })));
         });
 
-        // Real-time all tasks (for team average)
-        const unsubAllTasks = onSnapshot(collection(db, "tasks"), (tasksSnap) => {
-          setAllTasks(tasksSnap.docs.map((d) => ({ id: d.id, ...d.data() })));
-        });
-
         // Real-time videos
         const unsubVideos = onSnapshot(collection(db, "videos"), (vidSnap) => {
           setVideoData(vidSnap.docs.map((d) => ({ id: d.id, ...d.data() })));
@@ -120,7 +112,6 @@ export default function EmployeePage() {
         // Cleanup
         return () => {
           unsubTasks();
-          unsubAllTasks();
           unsubVideos();
         };
       });
@@ -238,10 +229,6 @@ export default function EmployeePage() {
     ]
   };
 
-  const teamProgress = allEmployees.length
-    ? allEmployees.reduce((sum, emp) => sum + (emp.progress || 0), 0) / allEmployees.length
-    : 0;
-
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="text-center">
@@ -282,7 +269,6 @@ export default function EmployeePage() {
                 <ChatBubbleLeftRightIcon className="h-8 w-8 text-indigo-600" />
                 <span className="ml-2 text-xl font-bold text-gray-900">WorkHub</span>
               </div>
-              {/* Update your navigation buttons in the EmployeePage component */}
               <div className="hidden sm:ml-6 sm:flex sm:space-x-8 overflow-x-auto scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent max-w-full">
                 <button
                   onClick={() => setActiveTab("dashboard")}
@@ -295,12 +281,6 @@ export default function EmployeePage() {
                   className={`${activeTab === "tasks" ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium whitespace-nowrap`}
                 >
                   My Tasks
-                </button>
-                <button
-                  onClick={() => setActiveTab("assigned-tasks")}
-                  className={`${activeTab === "assigned-tasks" ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium whitespace-nowrap`}
-                >
-                  Assigned Tasks
                 </button>
                 <button
                   onClick={() => setActiveTab("videos")}
@@ -378,15 +358,6 @@ export default function EmployeePage() {
                 className={`${activeTab === "chat" ? 'bg-indigo-50 border-indigo-500 text-indigo-700' : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'} block pl-3 pr-4 py-2 border-l-4 text-base font-medium whitespace-nowrap`}
               >
                 Team Chat
-              </button>
-              <button
-                onClick={() => {
-                  setActiveTab("assigned-tasks");
-                  setMobileMenuOpen(false);
-                }}
-                className={`${activeTab === "assigned-tasks" ? 'bg-indigo-50 border-indigo-500 text-indigo-700' : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'} block pl-3 pr-4 py-2 border-l-4 text-base font-medium whitespace-nowrap`}
-              >
-                Assigned Tasks
               </button>
               <button
                 onClick={handleLogout}
@@ -783,16 +754,6 @@ export default function EmployeePage() {
               </button>
             </form>
           </div>
-        )}
-
-        {activeTab === "assigned-tasks" && (
-          <TasksTab 
-            task={{ title: '', description: '', assignedTo: '', dueDate: new Date() }}
-            tasks={allTasks}
-            employees={allEmployees}
-            setTask={() => {}} // You can implement this if needed
-            setTasks={setAllTasks}
-          />
         )}
       </main>
     </div>
