@@ -89,6 +89,7 @@ export default function EmployeePage() {
       const unsubEmps = onSnapshot(collectionGroup(db, "employees"), (allSnap) => {
         const allEmps = allSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
         setAllEmployees(allEmps);
+        setEmployees(allEmps); // <-- Add this line
 
         const meDoc = allEmps.find((e) => e.uid === user.uid);
         if (!meDoc) {
