@@ -379,7 +379,8 @@ export default function HomePage() {
                         onClick={() => setSelectedRole("employee")}
                         className="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent shadow-sm text-base font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200 transition"
                       >
-                        Employee Portal
+                        User Dashboard
+                    
                       </button>
                       <button
                         type="button"

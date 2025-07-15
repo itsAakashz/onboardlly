@@ -53,7 +53,7 @@ export default function EmployeeLogin({ onSuccess }) {
         type="submit"
         className="w-full bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700"
       >
-        Login as Employee
+        Login as User
       </button>
     </form>
   );
