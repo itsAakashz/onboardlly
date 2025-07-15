@@ -282,35 +282,35 @@ export default function EmployeePage() {
                 <ChatBubbleLeftRightIcon className="h-8 w-8 text-indigo-600" />
                 <span className="ml-2 text-xl font-bold text-gray-900">WorkHub</span>
               </div>
-              // Update your navigation buttons in the EmployeePage component
-              <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
+              {/* Update your navigation buttons in the EmployeePage component */}
+              <div className="hidden sm:ml-6 sm:flex sm:space-x-8 overflow-x-auto scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent max-w-full">
                 <button
                   onClick={() => setActiveTab("dashboard")}
-                  className={`${activeTab === "dashboard" ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium`}
+                  className={`${activeTab === "dashboard" ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium whitespace-nowrap`}
                 >
                   Dashboard
                 </button>
                 <button
                   onClick={() => setActiveTab("tasks")}
-                  className={`${activeTab === "tasks" ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium`}
+                  className={`${activeTab === "tasks" ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium whitespace-nowrap`}
                 >
                   My Tasks
                 </button>
                 <button
                   onClick={() => setActiveTab("assigned-tasks")}
-                  className={`${activeTab === "assigned-tasks" ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium`}
+                  className={`${activeTab === "assigned-tasks" ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium whitespace-nowrap`}
                 >
                   Assigned Tasks
                 </button>
                 <button
                   onClick={() => setActiveTab("videos")}
-                  className={`${activeTab === "videos" ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium`}
+                  className={`${activeTab === "videos" ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium whitespace-nowrap`}
                 >
                   Training
                 </button>
                 <button
                   onClick={() => setActiveTab("chat")}
-                  className={`${activeTab === "chat" ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium`}
+                  className={`${activeTab === "chat" ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium whitespace-nowrap`}
                 >
                   Team Chat
                 </button>
@@ -341,14 +341,14 @@ export default function EmployeePage() {
 
         {/* Mobile menu */}
         {mobileMenuOpen && (
-          <div className="sm:hidden">
-            <div className="pt-2 pb-3 space-y-1">
+          <div className="sm:hidden overflow-x-auto max-w-full">
+            <div className="pt-2 pb-3 space-y-1 min-w-[400px]">
               <button
                 onClick={() => {
                   setActiveTab("dashboard");
                   setMobileMenuOpen(false);
                 }}
-                className={`${activeTab === "dashboard" ? 'bg-indigo-50 border-indigo-500 text-indigo-700' : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'} block pl-3 pr-4 py-2 border-l-4 text-base font-medium`}
+                className={`${activeTab === "dashboard" ? 'bg-indigo-50 border-indigo-500 text-indigo-700' : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'} block pl-3 pr-4 py-2 border-l-4 text-base font-medium whitespace-nowrap`}
               >
                 Dashboard
               </button>
@@ -357,7 +357,7 @@ export default function EmployeePage() {
                   setActiveTab("tasks");
                   setMobileMenuOpen(false);
                 }}
-                className={`${activeTab === "tasks" ? 'bg-indigo-50 border-indigo-500 text-indigo-700' : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'} block pl-3 pr-4 py-2 border-l-4 text-base font-medium`}
+                className={`${activeTab === "tasks" ? 'bg-indigo-50 border-indigo-500 text-indigo-700' : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'} block pl-3 pr-4 py-2 border-l-4 text-base font-medium whitespace-nowrap`}
               >
                 Tasks
               </button>
@@ -366,7 +366,7 @@ export default function EmployeePage() {
                   setActiveTab("videos");
                   setMobileMenuOpen(false);
                 }}
-                className={`${activeTab === "videos" ? 'bg-indigo-50 border-indigo-500 text-indigo-700' : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'} block pl-3 pr-4 py-2 border-l-4 text-base font-medium`}
+                className={`${activeTab === "videos" ? 'bg-indigo-50 border-indigo-500 text-indigo-700' : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'} block pl-3 pr-4 py-2 border-l-4 text-base font-medium whitespace-nowrap`}
               >
                 Training
               </button>
@@ -375,24 +375,22 @@ export default function EmployeePage() {
                   setActiveTab("chat");
                   setMobileMenuOpen(false);
                 }}
-                className={`${activeTab === "chat" ? 'bg-indigo-50 border-indigo-500 text-indigo-700' : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'} block pl-3 pr-4 py-2 border-l-4 text-base font-medium`}
+                className={`${activeTab === "chat" ? 'bg-indigo-50 border-indigo-500 text-indigo-700' : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'} block pl-3 pr-4 py-2 border-l-4 text-base font-medium whitespace-nowrap`}
               >
                 Team Chat
               </button>
-
-              // Update your mobile menu buttons
               <button
                 onClick={() => {
                   setActiveTab("assigned-tasks");
                   setMobileMenuOpen(false);
                 }}
-                className={`${activeTab === "assigned-tasks" ? 'bg-indigo-50 border-indigo-500 text-indigo-700' : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'} block pl-3 pr-4 py-2 border-l-4 text-base font-medium`}
+                className={`${activeTab === "assigned-tasks" ? 'bg-indigo-50 border-indigo-500 text-indigo-700' : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'} block pl-3 pr-4 py-2 border-l-4 text-base font-medium whitespace-nowrap`}
               >
                 Assigned Tasks
               </button>
               <button
                 onClick={handleLogout}
-                className="block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700"
+                className="block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700 whitespace-nowrap"
               >
                 Sign out
               </button>
